@@ -21,6 +21,8 @@ import AdminPanel from './adminPanel.jsx';
 import Menu from './menu.jsx';
 import StudentProfile from './StudentProfile.jsx';
 import StudentAssignments from './StudentAssignments.jsx';
+import MarkingDashboard from './MarkingDashboard.jsx';
+import CMFloatAd from './CMFloatAd.jsx';
 import axios from 'axios';
 
 /**
@@ -74,16 +76,27 @@ function App() {
    * @type {[string|boolean, Function]} Error message to display
    */
   const [sendErrorMessage, setSendErrorMessage] = useState(false);
-  
+
   /**
-   * @type {[boolean, Function]} Toggle admin panel visibility
+   * @type {[string, Function]} Active view: assignments, marking, admin
    */
-  const [showAdmin, setShowAdmin] = useState(false);
+  const [activeView, setActiveView] = useState('assignments');
   
   /**
    * @type {[boolean, Function]} Toggle profile modal visibility
    */
   const [showProfile, setShowProfile] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    if (currentUser.status === 3) {
+      setActiveView('admin');
+    } else if (currentUser.status === 2) {
+      setActiveView('marking');
+    } else {
+      setActiveView('assignments');
+    }
+  }, [currentUser]);
 
   /**
    * Configuration Loading Effect
@@ -117,18 +130,8 @@ function App() {
  * 
  * @effect
  * @dependency {string|boolean} sendSuccessMessage - Message to display
- */**
-   * Error Message Display Effect
-   * 
-   * Monitors sendErrorMessage state and displays error notification
-   * when value changes.
-   * 
-   * @effect
-   * @dependency {string|boolean} sendErrorMessage - Error message to display
-   * @dependency {Function} messageApi - Ant Design message API
-   */
-   @dependency {Function} messageApi - Ant Design message API
  */
+
 useEffect(() => {
     if (sendSuccessMessage) {
        messageApi.success(sendSuccessMessage);
@@ -160,18 +163,28 @@ useEffect(() => {
           <>
             <Menu
                currentUser={currentUser}
-               onAdmin={() => currentUser?.status === 3 && setShowAdmin(true)}
+               activeView={activeView}
+               onViewChange={setActiveView}
                onProfile={() => setShowProfile(true)}
                onLogout={() => setCurrentUser(null)}
             />
-            {currentUser.status === 3 ? (
+            {activeView === 'admin' && currentUser.status === 3 && (
               <AdminPanel
                 config={config}
                 currentUser={currentUser}
                 setSendSuccessMessage={setSendSuccessMessage}
                 setSendErrorMessage={setSendErrorMessage}
               />
-            ) : (
+            )}
+            {activeView === 'marking' && currentUser.status >= 2 && (
+              <MarkingDashboard
+                config={config}
+                currentUser={currentUser}
+                onSuccess={(msg) => setSendSuccessMessage(msg)}
+                onError={(msg) => setSendErrorMessage(msg)}
+              />
+            )}
+            {activeView === 'assignments' && (
               <StudentAssignments
                 config={config}
                 currentUser={currentUser}
@@ -198,6 +211,7 @@ useEffect(() => {
         )}
 
       </div>
+      <CMFloatAd />
     </>
   )
 }

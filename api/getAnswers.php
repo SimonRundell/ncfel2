@@ -8,7 +8,7 @@ if ($activityId === null || $studentId === null) {
     send_response('Missing activityId or studentId', 400);
 }
 
-$stmt = $mysqli->prepare('SELECT questionId, answer, `references`, status, updatedAt FROM answers WHERE activityId = ? AND studentId = ? ORDER BY questionId');
+$stmt = $mysqli->prepare('SELECT questionId, answer, `references`, status, outcome, comment, updatedAt FROM answers WHERE activityId = ? AND studentId = ? ORDER BY questionId');
 if (!$stmt) {
     log_info('Prepare failed: ' . $mysqli->error);
     send_response('Database error', 500);
@@ -24,6 +24,8 @@ $result = $stmt->get_result();
 $answers = [];
 $references = [];
 $status = 'INPROGRESS';
+$outcomes = [];
+$comments = [];
 
 while ($row = $result->fetch_assoc()) {
     $questionId = (int) $row['questionId'];
@@ -33,11 +35,15 @@ while ($row = $result->fetch_assoc()) {
     $answers[$questionId] = $decodedAnswer !== null ? $decodedAnswer : $row['answer'];
     $references[$questionId] = is_array($decodedRefs) ? $decodedRefs : [];
     $status = $row['status'] ?: $status;
+    $outcomes[$questionId] = $row['outcome'] ?: 'NOT ACHIEVED';
+    $comments[$questionId] = $row['comment'] ?? '';
 }
 
 send_response(['data' => [
     'answers' => $answers,
     'references' => $references,
     'status' => $status,
+    'outcomes' => $outcomes,
+    'comments' => $comments,
 ]]);
 ?>

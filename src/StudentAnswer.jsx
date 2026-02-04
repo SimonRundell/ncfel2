@@ -7,7 +7,7 @@ import { normalizeListResponse } from './adminApiHelpers';
 
 const BLOCKED_MESSAGE_TIMEOUT = 1200;
 
-const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
+const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, onError }) => {
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
@@ -16,8 +16,11 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
   const [unitName, setUnitName] = useState('');
   const [refsMap, setRefsMap] = useState({}); // questionId -> array of refs
   const [blockMessage, setBlockMessage] = useState('');
+  const [activityStatus, setActivityStatus] = useState(activity?.status || 'INPROGRESS');
   const [statusText, setStatusText] = useState(activity?.status || 'INPROGRESS');
   const [answers, setAnswers] = useState({}); // questionId -> {json}
+  const [outcomes, setOutcomes] = useState({}); // questionId -> outcome
+  const [markerComments, setMarkerComments] = useState({}); // questionId -> marker comment
   const storageKey = useMemo(() => `answer-${activity?.id || 'unknown'}`, [activity?.id]);
   const refsKey = useMemo(() => `answer-refs-${activity?.id || 'unknown'}`, [activity?.id]);
   const blockTimer = useRef(null);
@@ -52,26 +55,37 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
 
   useEffect(() => {
     if (!questions.length) return;
-    const initialAnswers = {};
-    const nextRefs = {};
-    questions.forEach((q) => {
-      const raw = localStorage.getItem(questionStorageKey(q.id));
-      if (raw) {
-        try {
-          initialAnswers[q.id] = JSON.parse(raw);
-        } catch (e) {
-          // ignore
-        }
-      }
-      if (!initialAnswers[q.id]) {
-        initialAnswers[q.id] = null; // empty to allow placeholder
-      }
 
-      const savedRefs = refsMap[q.id];
-      nextRefs[q.id] = Array.isArray(savedRefs) && savedRefs.length ? savedRefs.slice(0, 5) : [''];
+    // Seed answers/refs from localStorage only when a question has no value yet
+    setAnswers((prev) => {
+      const next = { ...prev };
+      questions.forEach((q) => {
+        if (next[q.id] !== undefined && next[q.id] !== null) return;
+        const raw = localStorage.getItem(questionStorageKey(q.id));
+        if (raw) {
+          try {
+            next[q.id] = JSON.parse(raw);
+            return;
+          } catch (e) {
+            // ignore malformed local storage entries
+          }
+        }
+        next[q.id] = null; // empty to allow placeholder
+      });
+      return next;
     });
-    setAnswers(initialAnswers);
-    setRefsMap((prev) => ({ ...nextRefs, ...prev }));
+
+    setRefsMap((prev) => {
+      const next = { ...prev };
+      questions.forEach((q) => {
+        if (Array.isArray(next[q.id]) && next[q.id].length) {
+          next[q.id] = next[q.id].slice(0, 5);
+          return;
+        }
+        next[q.id] = [''];
+      });
+      return next;
+    });
   }, [questions]);
 
   useEffect(() => {
@@ -157,17 +171,18 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
         const payload = response.data?.data || response.data || {};
         const serverAnswers = payload.answers || {};
         const serverRefs = payload.references || {};
-        const serverStatus = payload.status || 'IN PROGRESS';
+        const serverStatus = payload.status || 'INPROGRESS';
+        const serverOutcomes = payload.outcomes || {};
+        const serverComments = payload.comments || {};
 
         if (!Object.keys(serverAnswers).length) return;
 
-        setStatusText(
-          serverStatus === 'SUBMITTED'
-            ? 'SUBMITTED · Read-only'
-            : `${displayStatus(serverStatus)} · Loaded from server`
-        );
+        setActivityStatus(serverStatus);
+        setStatusText(displayStatus(serverStatus));
 
         setAnswers(serverAnswers);
+        setOutcomes(serverOutcomes);
+        setMarkerComments(serverComments);
         setRefsMap((prev) => {
           const next = { ...prev };
           Object.keys(serverRefs).forEach((qid) => {
@@ -193,10 +208,26 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
         return 'SUBMITTED · Read-only';
       case 'INPROGRESS':
         return 'IN PROGRESS';
+      case 'INMARKING':
+        return 'IN MARKING · Read-only';
+      case 'INREMARKING':
+        return 'IN REMARKING · Read-only';
+      case 'REDOING':
+        return 'REDOING';
+      case 'RESUBMITTED':
+        return 'RESUBMITTED · Read-only';
+      case 'PASSED':
+        return 'PASSED · Read-only';
       default:
         return status;
     }
   };
+
+  useEffect(() => {
+    const initialStatus = activity?.status || 'INPROGRESS';
+    setActivityStatus(initialStatus);
+    setStatusText(displayStatus(initialStatus));
+  }, [activity?.status]);
 
   const showBlocked = (msg) => {
     setBlockMessage(msg);
@@ -244,10 +275,28 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
     return bad.length ? `Invalid URLs: ${bad.join(', ')}` : 'URLs look valid';
   };
 
+  const updateActivityStatus = async (status, extraFields = {}) => {
+    if (!config?.api || !activity?.id || !activity?.studentId || !activity?.courseId || !activity?.unitId) return;
+    await axios.post(
+      `${config.api}/updateCurrentActivity.php`,
+      {
+        id: activity.id,
+        studentId: activity.studentId,
+        courseId: activity.courseId,
+        unitId: activity.unitId,
+        status,
+        ...extraFields,
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+  };
+
   const handleSubmit = async () => {
     if (!config?.api || !activity?.id) return;
     setLoading(true);
     try {
+      const nextStatus = activityStatus === 'REDOING' ? 'RESUBMITTED' : 'SUBMITTED';
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       // Persist draft locally (placeholder until backend storage is added)
       const perQuestionRefs = {};
       Object.keys(refsMap).forEach((qid) => {
@@ -272,24 +321,19 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
           studentId: activity.studentId,
           answers: answersPayload,
           references: perQuestionRefs,
-          status: 'SUBMITTED',
+          status: nextStatus,
         },
         { headers: { 'Content-Type': 'application/json' } }
       );
       setAnswers(answersPayload);
 
       // Update activity status
-      await axios.post(
-        `${config.api}/updateCurrentActivity.php`,
-        {
-          id: activity.id,
-          status: 'SUBMITTED',
-          dateSubmitted: new Date().toISOString().slice(0, 19).replace('T', ' '),
-          references: perQuestionRefs,
-        },
-        { headers: { 'Content-Type': 'application/json' } }
-      );
-      setStatusText('SUBMITTED · Read-only');
+      await updateActivityStatus(nextStatus, {
+        dateSubmitted: nextStatus === 'SUBMITTED' ? now : activity.dateSubmitted || now,
+        dateResubmitted: nextStatus === 'RESUBMITTED' ? now : activity.dateResubmitted || null,
+      });
+      setActivityStatus(nextStatus);
+      setStatusText(displayStatus(nextStatus));
       if (onSubmitted) onSubmitted();
     } catch (error) {
       console.error('Error submitting answer', error);
@@ -303,6 +347,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
     if (!config?.api || !activity?.id) return;
     setLoading(true);
     try {
+      const draftStatus = activityStatus === 'REDOING' ? 'REDOING' : 'INPROGRESS';
       const perQuestionRefs = {};
       Object.keys(refsMap).forEach((qid) => {
         const cleaned = (refsMap[qid] || []).map((r) => (r || '').trim()).filter(Boolean);
@@ -333,7 +378,10 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
         headers: { 'Content-Type': 'application/json' },
       });
       setAnswers(answersPayload);
-      setStatusText('IN PROGRESS · Draft saved to server');
+      await updateActivityStatus(draftStatus);
+      if (onDraftSaved) onDraftSaved();
+      setActivityStatus(draftStatus);
+      setStatusText(`${displayStatus(draftStatus)} · Draft saved`);
     } catch (error) {
       console.error('Error saving draft', error);
       if (onError) onError('Error saving draft');
@@ -356,16 +404,19 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
       return next;
     });
     setRefsMap({});
+    setOutcomes({});
+    setMarkerComments({});
+    setActivityStatus('INPROGRESS');
     setStatusText('IN PROGRESS · Draft cleared');
   };
 
   const icons = {
-    bold: <img src="/images/bold.png" alt="Bold" width="50" height="50" />,
-    italic: <img src="/images/italic.png" alt="Italic" width="50" height="50" />,
-    bullet: <img src="/images/unorderedlist.png" alt="Bullet list" width="50" height="50" />,
-    ordered: <img src="/images/orderedlist.png" alt="Ordered list" width="50" height="50" />,
-    undo: <img src="/images/undo.png" alt="Undo" width="50" height="50" />,
-    redo: <img src="/images/redo.png" alt="Redo" width="50" height="50" />,
+    bold: <img src="/images/bold.png" alt="Bold" width="28" height="28" />,
+    italic: <img src="/images/italic.png" alt="Italic" width="28" height="28" />,
+    bullet: <img src="/images/unorderedlist.png" alt="Bullet list" width="28" height="28" />,
+    ordered: <img src="/images/orderedlist.png" alt="Ordered list" width="28" height="28" />,
+    undo: <img src="/images/undo.png" alt="Undo" width="28" height="28" />,
+    redo: <img src="/images/redo.png" alt="Redo" width="28" height="28" />,
   };
 
   const ToolbarButton = ({ icon, label, isActive, onClick, disabled }) => (
@@ -381,7 +432,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
     </button>
   );
 
-  const QuestionAnswerItem = ({ question, disabled }) => {
+  const QuestionAnswerItem = ({ question, disabled, outcome, comment }) => {
     const saved = answers[question.id];
     const saveTimer = useRef(null);
     const editor = useEditor({
@@ -554,11 +605,39 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
               </div>
             </div>
             {validateRefs(question.id) && <div className="answer-meta">{validateRefs(question.id)}</div>}
+            {outcome && activityStatus !== 'INPROGRESS' && (
+              <div className="answer-meta">Outcome: {outcome}{comment ? ` · ${comment}` : ''}</div>
+            )}
           </div>
         </div>
       </div>
     );
   };
+
+  const isQuestionEditable = (qid) => {
+    const lockedStatuses = [
+      'SUBMITTED',
+      'INMARKING',
+      'INREMARKING',
+      'RESUBMITTED',
+      'PASSED',
+      'NOTPASSED',
+      'DISCONTINUED',
+    ];
+    if (lockedStatuses.includes(activityStatus)) return false;
+    if (activityStatus === 'REDOING' && (outcomes[qid] || 'NOT ACHIEVED') === 'ACHIEVED') return false;
+    return true;
+  };
+
+  const formLocked = [
+    'SUBMITTED',
+    'INMARKING',
+    'INREMARKING',
+    'RESUBMITTED',
+    'PASSED',
+    'NOTPASSED',
+    'DISCONTINUED',
+  ].includes(activityStatus);
 
   return (
     <div className="modal-backdrop">
@@ -582,7 +661,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
               Unit: {activity?.unitId}
               {unitName ? ` · ${unitName}` : ''}
              <span className="normal">Course: {courseName || activity?.courseId}</span>
-             <span className="normal"> Current status: {displayStatus(activity?.status)}</span>
+             <span className="normal"> Current status: {displayStatus(activityStatus)}</span>
             </div>
           </div>
 
@@ -595,7 +674,13 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
             {!questionsLoading && !questionsError && questions.length > 0 && (
               <div className="question-scroll qa-list">
                 {questions.map((q) => (
-                  <QuestionAnswerItem key={q.id} question={q} disabled={statusText.startsWith('SUBMITTED')} />
+                  <QuestionAnswerItem
+                    key={q.id}
+                    question={q}
+                    disabled={!isQuestionEditable(q.id)}
+                    outcome={outcomes[q.id]}
+                    comment={markerComments[q.id]}
+                  />
                 ))}
               </div>
             )}
@@ -605,10 +690,10 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
           {blockMessage && <div className="answer-blocked">{blockMessage}</div>}
 
           <div className="modal-actions">
-            <button type="button" onClick={handleSaveDraft} disabled={loading}>
+            <button type="button" onClick={handleSaveDraft} disabled={loading || formLocked}>
               Save draft
             </button>
-            <button type="button" onClick={() => setConfirmOpen(true)} disabled={loading}>
+            <button type="button" onClick={() => setConfirmOpen(true)} disabled={loading || formLocked}>
               Submit
             </button>
           </div>

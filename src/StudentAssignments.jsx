@@ -42,11 +42,12 @@ const StudentAssignments = ({ config, currentUser, onError }) => {
     try {
       const response = await axios.post(
         `${config.api}/getCurrentActivities.php`,
-        { studentId: currentUser.id, status: 'INPROGRESS' },
+        { studentId: currentUser.id },
         { headers: { 'Content-Type': 'application/json' } }
       );
       const data = normalizeListResponse(response.data);
-      setActivities(Array.isArray(data) ? data : []);
+      const filtered = Array.isArray(data) ? data.filter((row) => row.status !== 'DISCONTINUED') : [];
+      setActivities(filtered);
     } catch (error) {
       console.error('Error loading assignments', error);
       if (onError) onError('Error loading assignments');
@@ -106,11 +107,15 @@ const StudentAssignments = ({ config, currentUser, onError }) => {
         <StudentAnswer
           config={config}
           activity={selectedActivity}
-          onClose={() => setSelectedActivity(null)}
+          onClose={() => {
+            setSelectedActivity(null);
+            loadActivities();
+          }}
           onSubmitted={() => {
             setSelectedActivity(null);
             loadActivities();
           }}
+          onDraftSaved={loadActivities}
           onError={onError}
         />
       )}

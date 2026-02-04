@@ -193,8 +193,8 @@ TWEAKS
 
   .motd {
     padding-top: 20px;
-    width: 85vw;
-    max-width: 85vw;
+    width: 30vw;
+    max-width: 30vw;
     min-width: auto;
   }
 
@@ -244,6 +244,19 @@ MENU
   gap: 0.6rem;
   margin-left: auto;
   flex-wrap: wrap;
+}
+
+.menu-toggle {
+  border-radius: 10px;
+  padding: 0.45rem 0.9rem;
+  background: #1f1f1f;
+  border: 1px solid #3a3a3a;
+  color: #f0f0f0;
+}
+
+.menu-toggle.active {
+  border-color: #4fa3ff;
+  background: #243447;
 }
 
 .menu-actions button[disabled] {
@@ -775,21 +788,32 @@ ANSWER EDITOR
 .answer-toolbar {
   display: flex;
   flex-wrap: wrap;
-  /* border: 1px solid #08f874; */
+  gap: 0.35rem;
+  align-items: center;
 }
 
 .answer-toolbar-button {
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid #2f2f2f;
   background: #1c1c1c;
   color: #f4f4f4;
-  /* padding: 0.4rem 0.65rem; */
+  padding: 0.15rem;
   font-size: 0.5rem;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .answer-toolbar-button.active {
   border-color: #4fa3ff;
   background: #243447;
+}
+
+.answer-toolbar-button img {
+  width: 24px;
+  height: 24px;
 }
 
 .confirm-backdrop {
@@ -877,6 +901,209 @@ ANSWER EDITOR
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+/************************************************
+
+MARKING DASHBOARD
+
+*************************************************/
+
+.marking-section {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.marking-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.marking-title {
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.marking-subtitle {
+  color: #b5b5b5;
+  font-size: 0.95rem;
+}
+
+.marking-unit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.marking-unit-card {
+  text-align: left;
+  background: #1f1f1f;
+  border: 1px solid #2f2f2f;
+  border-radius: 12px;
+  padding: 0.85rem;
+  color: #f4f4f4;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+
+.marking-unit-card.active {
+  border-color: #4fa3ff;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
+}
+
+.marking-unit-name {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.marking-unit-meta {
+  color: #c9c9c9;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.marking-unit-stats {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  background: #243447;
+  border: 1px solid #3a516b;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.marking-submissions {
+  border: 1px solid #2f2f2f;
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: #181818;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.marking-submission-card {
+  width: 100%;
+  text-align: left;
+  background: #1d1d1d;
+  border: 1px solid #2c2c2c;
+  border-radius: 10px;
+  padding: 0.75rem;
+  color: #f5f5f5;
+}
+
+.marking-submission-card.active {
+  border-color: #4fa3ff;
+}
+
+.marking-submission-title {
+  font-weight: 700;
+}
+
+.marking-submission-meta {
+  color: #c0c0c0;
+  font-size: 0.9rem;
+}
+
+.marking-workspace {
+  border: 1px solid #2f2f2f;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.marking-workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.marking-workspace-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.marking-workspace-meta {
+  color: #c1c1c1;
+  font-size: 0.95rem;
+}
+
+.marking-workspace-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.marking-question {
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #161616;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.marking-question-header {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.marking-question-ref {
+  font-weight: 700;
+  color: #cce1ff;
+}
+
+.marking-question-text {
+  color: #f5f5f5;
+}
+
+.marking-answer-box {
+  border: 1px solid #2f2f2f;
+  border-radius: 8px;
+  padding: 0.65rem;
+  background: #101010;
+}
+
+.marking-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.marking-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.marking-comment {
+  flex: 1;
+  min-width: 220px;
+  border-radius: 8px;
+  border: 1px solid #2f2f2f;
+  background: #1a1a1a;
+  color: #f4f4f4;
+  padding: 0.5rem;
+  resize: vertical;
+}
+
+.marking-empty {
+  color: #b7b7b7;
 }
 
 .question-item {

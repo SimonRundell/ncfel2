@@ -78,23 +78,23 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
   const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   // Fetch MOTD content on component mount
-  // useEffect(() => {
-  //   const fetchMotd = async () => {
-  //     try {
-  //       const response = await fetch('/MOTD.txt');
-  //       if (response.ok) {
-  //         const text = await response.text();
-  //         setMotdContent(text.trim());
-  //       }
-  //     } catch (error) {
-  //       // console.log('Could not load MOTD.txt, using default message');
-  //       // console.log(error);
-  //       setMotdContent("Beta Test");
-  //     }
-  //   };
+  useEffect(() => {
+    const fetchMotd = async () => {
+      try {
+        const response = await fetch('/MOTD.txt');
+        if (response.ok) {
+          const text = await response.text();
+          setMotdContent(text.trim());
+        }
+      } catch (error) {
+        // console.log('Could not load MOTD.txt, using default message');
+        // console.log(error);
+        setMotdContent("Beta Test");
+      }
+    };
 
-  //   fetchMotd();
-  // }, []);
+    fetchMotd();
+  }, []);
 
   /**
    * Handle Login Form Submission

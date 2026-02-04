@@ -175,7 +175,7 @@ function console_log($output, $with_script_tags = true) {
  *   "status_code": 200       // HTTP status code
  * }
  * 
-/**
+
  * Send JSON Response Without Terminating
  * 
  * Similar to send_response() but doesn't terminate script execution.
@@ -190,7 +190,7 @@ function console_log($output, $with_script_tags = true) {
  * // Script continues executing...
  * 
  * @see send_response() For standard responses that terminate
- */
+ 
  * @param mixed $response Response data (string or array)
  * @param int $code HTTP status code (default: 200)
  * @return never Terminates script execution after sending response

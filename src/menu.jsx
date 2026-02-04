@@ -1,7 +1,8 @@
 import './App.css';
 
-function Menu({ currentUser, onLogout, onAdmin, onProfile }) {
+function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange }) {
   const isAdmin = currentUser && currentUser.status === 3;
+  const isTeacher = currentUser && currentUser.status >= 2;
 
   return (
     <div className="menu-block">
@@ -21,11 +22,29 @@ function Menu({ currentUser, onLogout, onAdmin, onProfile }) {
         )}
       </div>
       <div className="menu-actions">
+        <button type="button" onClick={() => onViewChange('assignments')} className={activeView === 'assignments' ? 'menu-toggle active' : 'menu-toggle'}>
+          Assignments
+        </button>
+        {isTeacher && (
+          <button
+            type="button"
+            onClick={() => onViewChange('marking')}
+            className={activeView === 'marking' ? 'menu-toggle active' : 'menu-toggle'}
+          >
+            Marking
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => onViewChange('admin')}
+            className={activeView === 'admin' ? 'menu-toggle active' : 'menu-toggle'}
+          >
+            Admin
+          </button>
+        )}
         <button type="button" onClick={onProfile}>
           Profile
-        </button>
-        <button type="button" onClick={onAdmin} disabled={!isAdmin}>
-          Admin
         </button>
         <button type="button" onClick={onLogout}>
           Logout
