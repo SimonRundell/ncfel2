@@ -1,0 +1,14 @@
+{
+    "servername": "localhost",
+    "port": 3306,
+    "username": "your_db_user",
+    "password": "your_db_password",
+    "dbname": "ncfel2",
+    "api": "http://localhost",
+    "smtpServer": "smtp.example.com",
+    "smtpPort": 587,
+    "smtpUser": "smtp_user",
+    "smtpPass": "smtp_password",
+    "smtpFrom": "NCFE Level 2 Certificate Server",
+    "smtpFromEmail": "server@example.com"
+}
