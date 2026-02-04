@@ -14,12 +14,15 @@ use PHPMailer\PHPMailer\Exception;
 class EmailHelper {
     private $config;
     private $mailer;
+    private $logFile;
 
     public function __construct() {
         $configFile = __DIR__ . '/.config.json';
         if (!file_exists($configFile)) {
             throw new Exception('.config.json not found for email configuration');
         }
+
+        $this->logFile = __DIR__ . '/email.log';
 
         $this->config = json_decode(file_get_contents($configFile), true);
         if (!is_array($this->config)) {
@@ -51,6 +54,8 @@ class EmailHelper {
      * Send an email (HTML or plain text).
      */
     public function sendEmail($to, $subject, $body, $isHTML = true, $attachments = []) {
+        $attachments = is_array($attachments) ? $attachments : [$attachments];
+        $recipients = is_array($to) ? $to : [$to];
         try {
             $this->mailer->clearAddresses();
             $this->mailer->clearAttachments();
@@ -75,9 +80,28 @@ class EmailHelper {
             }
 
             $this->mailer->send();
+            $this->logEmail([
+                'timestamp' => date('c'),
+                'status' => 'success',
+                'to' => $recipients,
+                'subject' => $subject,
+                'isHTML' => $isHTML,
+                'attachments' => array_map('basename', $attachments),
+                'bodyPreview' => substr(strip_tags($body), 0, 200)
+            ]);
             return true;
         } catch (Exception $e) {
             error_log('Email send failed: ' . $this->mailer->ErrorInfo);
+            $this->logEmail([
+                'timestamp' => date('c'),
+                'status' => 'failure',
+                'to' => $recipients,
+                'subject' => $subject,
+                'isHTML' => $isHTML,
+                'attachments' => array_map('basename', $attachments),
+                'error' => $this->mailer->ErrorInfo ?: $e->getMessage(),
+                'bodyPreview' => substr(strip_tags($body), 0, 200)
+            ]);
             return false;
         }
     }
@@ -96,6 +120,13 @@ class EmailHelper {
         $templatePath = __DIR__ . '/templates/' . $templateFile;
         if (!file_exists($templatePath)) {
             error_log('Email template not found: ' . $templatePath);
+            $this->logEmail([
+                'timestamp' => date('c'),
+                'status' => 'template_missing',
+                'to' => is_array($to) ? $to : [$to],
+                'subject' => $subject,
+                'template' => $templateFile
+            ]);
             return false;
         }
 
@@ -105,5 +136,17 @@ class EmailHelper {
         }
 
         return $this->sendEmail($to, $subject, $body, true);
+    }
+
+    private function logEmail(array $entry) {
+        $line = json_encode($entry);
+        if ($line === false) {
+            error_log('Email log encode failed');
+            return;
+        }
+
+        if (file_put_contents($this->logFile, $line . PHP_EOL, FILE_APPEND | LOCK_EX) === false) {
+            error_log('Email log write failed');
+        }
     }
 }

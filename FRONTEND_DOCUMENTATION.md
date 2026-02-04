@@ -19,8 +19,10 @@ App.jsx (Root)
         │   ├── UnitManager.jsx
         │   ├── CurrentActivityManager.jsx
         │   └── AssignUnit.jsx
-        └── StudentAssignments.jsx (Status=0,2)
-            └── StudentAnswer.jsx
+    ├── StudentAssignments.jsx (Status=0,2)
+    │   └── StudentAnswer.jsx
+    ├── MarkingDashboard.jsx (Status>=2)
+    └── AssessmentReport.jsx (Status>=2)
 ```
 
 ## Core Components
@@ -100,6 +102,33 @@ App.jsx (Root)
 - MD5 hashing via CryptoJS
 - Loading spinner during API calls
 - MOTD feature currently disabled
+- "Forgotten your password?" now uses a styled small button (`link-button` class) instead of inline-styled link
+
+---
+
+### AssessmentReport.jsx
+**Purpose**: Printable class/assessment overview for teachers/admins
+
+**Features:**
+- Filters: class (auto-selected for teachers), status
+- Table view with dates formatted dd/mm/yyyy hh:mm; blanks when data missing
+- Printable layout (A4 landscape) with dedicated Print button
+- Collapses repeated student names on consecutive rows for readability
+
+**Data Sources:**
+- GET `/api/getCurrentActivities.php`
+- GET `/api/getCourses.php`
+- GET `/api/getUnits.php`
+- POST `/api/getUsers.php` (students by class/status)
+
+---
+
+### MarkingDashboard.jsx
+**Purpose**: Teacher marking workspace for submissions
+
+**Recent Updates:**
+- Sticky workspace header keeps actions visible while scrolling
+- Primary action renamed to "Finish marking & return" to clarify status update
 
 ---
 

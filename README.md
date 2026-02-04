@@ -47,7 +47,8 @@ The NCFE Level 2 Certificate System is a full-stack web application designed to 
 ### For Teachers (Status: 2)
 - All student features plus:
 - View student submissions
-- Mark and provide feedback
+- Mark and provide feedback (sticky marking header with finish action)
+- Assessment Report: filter by class/status, printable landscape table with key dates
 - Monitor class progress
 - Receive email notifications for submissions
 

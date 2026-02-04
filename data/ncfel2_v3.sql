@@ -92,24 +92,6 @@ CREATE TABLE `currentactivity`  (
 INSERT INTO `currentactivity` VALUES (1, 2, 1, 1, 'INPROGRESS', '2026-02-03 20:52:30', NULL, NULL, NULL, NULL);
 
 -- ----------------------------
--- Table structure for marking
--- ----------------------------
-DROP TABLE IF EXISTS `marking`;
-CREATE TABLE `marking`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `studentId` int NOT NULL,
-  `answerId` int NOT NULL,
-  `outcome` enum('ACHIEVED','NOTACHIEVED') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'NOTACHIEVED',
-  `dateMarked` datetime NOT NULL,
-  `comment` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of marking
--- ----------------------------
-
--- ----------------------------
 -- Table structure for questions
 -- ----------------------------
 DROP TABLE IF EXISTS `questions`;

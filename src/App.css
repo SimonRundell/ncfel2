@@ -66,6 +66,17 @@ select, input  {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
+input[type=checkbox]
+{
+  /* Double-sized Checkboxes */
+  -ms-transform: scale(2); /* IE */
+  -moz-transform: scale(2); /* FF */
+  -webkit-transform: scale(2); /* Safari and Chrome */
+  -o-transform: scale(2); /* Opera */
+  transform: scale(2);
+  padding: 10px;
+}
+
 /*-----------------------------------
 Containers
 -----------------------------------*/
@@ -149,6 +160,25 @@ Containers
   margin-top: 20px;
 }
 
+.link-button {
+  display: inline-block;
+  background: transparent;
+  color: #a6c8ff;
+  border: 1px solid #3a3a3a;
+  border-radius: 10px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.link-button:hover {
+  border-color: #646cff;
+  color: #ffffff;
+  background: rgba(100, 108, 255, 0.1);
+}
+
 /************************************************
 
 TWEAKS
@@ -161,6 +191,10 @@ TWEAKS
 
 .leftgap{
   margin-left: 5px;
+}
+
+.biggergap{
+  margin-left: 10px;
 }
 
 .normal {
@@ -679,6 +713,87 @@ MODAL
   color: #b0b0b0;
 }
 
+.report-table-wrapper {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  border: 1px solid #2f2f2f;
+  border-radius: 10px;
+  background: #101010;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+  font-size: 0.8rem;
+}
+
+.report-table thead th {
+  text-align: left;
+  padding: 0.75rem;
+  font-weight: 700;
+  background: #181818;
+  border-bottom: 1px solid #2f2f2f;
+}
+
+.report-table tbody td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #1f1f1f;
+  white-space: nowrap;
+  color: #e8e8e8;
+}
+
+.report-table tbody tr:nth-child(odd) {
+  background: #141414;
+}
+
+.report-table tbody tr:hover {
+  background: #1c1c1c;
+}
+
+.hide-on-print {
+  /* Hidden only when printing */
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  body {
+    font-size: 9px;
+    color: #000;
+    background: #fff;
+  }
+
+  .app-container,
+  .admin-section {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    border: 1px solid #000;
+    background: #fff;
+  }
+
+  .hide-on-print {
+    display: none !important;
+  }
+
+  .report-table {
+    font-size: 9px;
+    min-width: auto;
+  }
+
+  .report-table thead th,
+  .report-table tbody td {
+    padding: 3px 5px;
+    border-color: #ccc;
+    color: #000;
+  }
+}
+
 .admin-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -750,9 +865,12 @@ STUDENT ASSIGNMENTS
 
 .student-assignment-card-button {
   all: unset;
-  width: 100%;
+  width: 90%;
   text-align: left;
   cursor: pointer;
+  border: 1px solid #504f4f;
+  border-radius: 12px;;
+  padding: 15px;
 }
 
 .student-assignment-card-button:focus {
@@ -934,18 +1052,19 @@ MARKING DASHBOARD
 
 .marking-unit-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
 }
 
 .marking-unit-card {
   text-align: left;
   background: #1f1f1f;
-  border: 1px solid #2f2f2f;
+  border: 1px solid #797979;
   border-radius: 12px;
   padding: 0.85rem;
   color: #f4f4f4;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  width: 320px;
 }
 
 .marking-unit-card.active {
@@ -979,21 +1098,20 @@ MARKING DASHBOARD
 }
 
 .marking-submissions {
-  border: 1px solid #2f2f2f;
+  border: 1px solid #4e4e4e;
   border-radius: 12px;
   padding: 0.75rem;
-  background: #181818;
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-direction: row;
+  gap: 1rem;
 }
 
 .marking-submission-card {
-  width: 100%;
+  width: 300px;
   text-align: left;
   background: #1d1d1d;
-  border: 1px solid #2c2c2c;
-  border-radius: 10px;
+  border: 1px solid #4e4e4e;
+  border-radius: 12px;
   padding: 0.75rem;
   color: #f5f5f5;
 }
@@ -1019,6 +1137,7 @@ MARKING DASHBOARD
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  position: relative;
 }
 
 .marking-workspace-header {
@@ -1027,6 +1146,11 @@ MARKING DASHBOARD
   align-items: flex-start;
   gap: 0.75rem;
   flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  padding-bottom: 0.5rem;
+  background: linear-gradient(180deg, #111 70%, rgba(17,17,17,0));
+  z-index: 2;
 }
 
 .marking-workspace-title {

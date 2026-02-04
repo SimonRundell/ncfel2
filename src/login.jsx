@@ -267,13 +267,13 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
             
             <div className='form-group' style={{ textAlign: 'center', marginTop: '15px' }}>
               {!showPasswordReset ? (
-                <a 
-                  href="#" 
+                <button
+                  type="button"
+                  className="link-button"
                   onClick={(e) => { e.preventDefault(); setShowPasswordReset(true); }}
-                  style={{ color: '#003366', textDecoration: 'underline', cursor: 'pointer' }}
                 >
                   Forgotten your password?
-                </a>
+                </button>
               ) : (
                 <div>
                   <p style={{ marginBottom: '10px' }}>

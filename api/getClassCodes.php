@@ -1,7 +1,7 @@
 <?php
 include 'setup.php';
 
-$query = "SELECT classCode FROM user";
+$query = "SELECT DISTINCT classCode FROM user WHERE classCode IS NOT NULL AND classCode != '' ORDER BY classCode ASC";
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {

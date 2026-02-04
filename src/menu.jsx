@@ -22,17 +22,24 @@ function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange }) {
         )}
       </div>
       <div className="menu-actions">
-        <button type="button" onClick={() => onViewChange('assignments')} className={activeView === 'assignments' ? 'menu-toggle active' : 'menu-toggle'}>
-          Assignments
-        </button>
+
         {isTeacher && (
-          <button
-            type="button"
-            onClick={() => onViewChange('marking')}
-            className={activeView === 'marking' ? 'menu-toggle active' : 'menu-toggle'}
-          >
-            Marking
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => onViewChange('report')}
+              className={activeView === 'report' ? 'menu-toggle active' : 'menu-toggle'}
+            >
+              Assessment Report
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewChange('marking')}
+              className={activeView === 'marking' ? 'menu-toggle active' : 'menu-toggle'}
+            >
+              Marking
+            </button>
+          </>
         )}
         {isAdmin && (
           <button

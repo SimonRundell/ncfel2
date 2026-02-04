@@ -10,6 +10,7 @@ function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
     const [activeSection, setActiveSection] = useState('roster');
     const [classCodes, setClassCodes] = useState([]);
     const [students, setStudents] = useState([]);
+    const [rosterSearch, setRosterSearch] = useState('');
     const [selectedClass, setSelectedClass] = useState(null);
     const [loadingRoster, setLoadingRoster] = useState(false);
     const [selectedUserForEdit, setSelectedUserForEdit] = useState(null);
@@ -46,6 +47,7 @@ function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
 
     const fetchStudents = async (classCode) => {
         setSelectedClass(classCode);
+        setRosterSearch('');
         if (!classCode) {
             setStudents([]);
             return;
@@ -75,7 +77,7 @@ function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
         { key: 'roster', label: 'Class roster' },
         { key: 'courses', label: 'Courses' },
         { key: 'units', label: 'Units' },
-        { key: 'assign', label: 'Set assessments' },
+        { key: 'assign', label: 'Set Assessments' },
         { key: 'users', label: 'Users' },
 
     ];
@@ -125,20 +127,33 @@ function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
 
                     {students.length > 0 && (
                         <div>
-                            <h3>Students of {selectedClass}:</h3>
+                            <h3>Students of {selectedClass}:
+                            <span className="biggergap">
+                            <input
+                                type="text"
+                                value={rosterSearch}
+                                onChange={(e) => setRosterSearch(e.target.value)}
+                                placeholder="Search student name"
+                                className="admin-filter-input"
+                            /> </span></h3>
                             <ul className="student-table">
-                                {students.map((student, index) => (
-                                                    <li
-                                                        className="student-row"
-                                                        key={index}
-                                                        onClick={() => {
-                                                            setSelectedUserForEdit(student);
-                                                            setActiveSection('users');
-                                                        }}
-                                                    >
-                                                        {student.userName}
-                                                    </li>
-                                ))}
+                                {students
+                                    .filter((student) => {
+                                        if (!rosterSearch.trim()) return true;
+                                        return (student.userName || '').toLowerCase().includes(rosterSearch.trim().toLowerCase());
+                                    })
+                                    .map((student, index) => (
+                                        <li
+                                            className="student-row"
+                                            key={index}
+                                            onClick={() => {
+                                                setSelectedUserForEdit(student);
+                                                setActiveSection('users');
+                                            }}
+                                        >
+                                            {student.userName}
+                                        </li>
+                                    ))}
                             </ul>
                         </div>
                     )}

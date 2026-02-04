@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+adminer.css
+adminer.php
 
 # Local secrets/config
 api/.config.json

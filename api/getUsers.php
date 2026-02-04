@@ -31,7 +31,7 @@ $query = 'SELECT * FROM user';
 if (!empty($conditions)) {
     $query .= ' WHERE ' . implode(' AND ', $conditions);
 }
-$query .= ' ORDER BY userName';
+$query .= ' ORDER BY id ASC';
 
 $stmt = $mysqli->prepare($query);
 

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { normalizeListResponse } from './adminApiHelpers';
+import { formatDateTime } from './dateUtils';
 
 const READY_STATUSES = ['SUBMITTED', 'RESUBMITTED'];
 const MARKING_STATUSES = ['INMARKING', 'INREMARKING'];
@@ -298,7 +299,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
               className={`marking-unit-card${Number(unitId) === selectedUnitId ? ' active' : ''}`}
               onClick={() => setSelectedUnitId(Number(unitId))}
             >
-              <div className="marking-unit-name">{unitMap[unitId] || `Unit ${unitId}`}</div>
+              <div className="marking-unit-name"><strong>Unit {unitId} {unitMap[unitId] || `Unit ${unitId}`}</strong></div>
               <div className="marking-unit-meta">Course: {courseLabel}</div>
               <div className="marking-unit-stats">
                 <span className="stat-chip">To mark: {stats.ready}</span>
@@ -309,10 +310,11 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
         })}
       </div>
 
-      {selectedUnitId && (
-        <div className="marking-submissions">
-          <div className="marking-subtitle">Submissions for {unitMap[selectedUnitId] || `Unit ${selectedUnitId}`}</div>
-          {submissionsForUnit.length === 0 && <div className="marking-empty">No submissions for this unit.</div>}
+      {selectedUnitId && (  
+        <>
+          <div className="marking-subtitle">Submissions for <strong>Unit {selectedUnitId} {unitMap[selectedUnitId] || `Unit ${selectedUnitId}`}</strong></div>
+          <div className="marking-submissions">
+            {submissionsForUnit.length === 0 && <div className="marking-empty">No submissions for this unit.</div>}
           {submissionsForUnit.map((act) => (
             <button
               key={act.id}
@@ -323,11 +325,16 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
             >
               <div className="marking-submission-title">{studentMap[act.studentId] || `Student ${act.studentId}`}</div>
               <div className="marking-submission-meta">Status: {act.status}</div>
-              {act.dateSubmitted && <div className="marking-submission-meta">Submitted: {act.dateSubmitted}</div>}
-              {act.dateResubmitted && <div className="marking-submission-meta">Resubmitted: {act.dateResubmitted}</div>}
+              {act.dateSubmitted && (
+                <div className="marking-submission-meta">Submitted: {formatDateTime(act.dateSubmitted)}</div>
+              )}
+              {act.dateResubmitted && (
+                <div className="marking-submission-meta">Resubmitted: {formatDateTime(act.dateResubmitted)}</div>
+              )}
             </button>
           ))}
         </div>
+        </>
       )}
 
       {selectedSubmission && (
@@ -343,7 +350,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
                 Close
               </button>
               <button type="button" onClick={saveMarking} disabled={saving || loading || questions.length === 0}>
-                Save marking
+                Finish marking &amp; return
               </button>
             </div>
           </div>

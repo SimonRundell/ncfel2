@@ -21,6 +21,7 @@ import AdminPanel from './adminPanel.jsx';
 import Menu from './menu.jsx';
 import StudentProfile from './StudentProfile.jsx';
 import StudentAssignments from './StudentAssignments.jsx';
+import AssessmentReport from './AssessmentReport.jsx';
 import MarkingDashboard from './MarkingDashboard.jsx';
 import CMFloatAd from './CMFloatAd.jsx';
 import axios from 'axios';
@@ -78,7 +79,7 @@ function App() {
   const [sendErrorMessage, setSendErrorMessage] = useState(false);
 
   /**
-   * @type {[string, Function]} Active view: assignments, marking, admin
+  * @type {[string, Function]} Active view: assignments, marking, admin, report
    */
   const [activeView, setActiveView] = useState('assignments');
   
@@ -181,6 +182,13 @@ useEffect(() => {
                 config={config}
                 currentUser={currentUser}
                 onSuccess={(msg) => setSendSuccessMessage(msg)}
+                onError={(msg) => setSendErrorMessage(msg)}
+              />
+            )}
+            {activeView === 'report' && currentUser.status >= 2 && (
+              <AssessmentReport
+                config={config}
+                currentUser={currentUser}
                 onError={(msg) => setSendErrorMessage(msg)}
               />
             )}

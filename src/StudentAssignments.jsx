@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { normalizeListResponse } from './adminApiHelpers';
+import { formatDateTime } from './dateUtils';
 import StudentAnswer from './StudentAnswer.jsx';
 
 const StudentAssignments = ({ config, currentUser, onError }) => {
@@ -92,12 +93,11 @@ const StudentAssignments = ({ config, currentUser, onError }) => {
             type="button"
             onClick={() => setSelectedActivity(act)}
           >
-            <div className="student-assignment-label">Unit</div>
-            <div className="student-assignment-value">{unitMap[act.unitId] || `Unit ${act.unitId}`}</div>
+            <div className="student-assignment-value">Unit {act.unitId} {unitMap[act.unitId]}</div>
             <div className="student-assignment-meta">Course: {courseMap[act.courseId] || act.courseId}</div>
             <div className="student-assignment-meta">Status: {act.status}</div>
             {act.dateSet && (
-              <div className="student-assignment-meta">Set: {act.dateSet}</div>
+              <div className="student-assignment-meta">Set: {formatDateTime(act.dateSet)}</div>
             )}
           </button>
         ))}
