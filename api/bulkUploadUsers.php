@@ -1,5 +1,6 @@
 <?php
 include 'setup.php';
+require_once __DIR__ . '/emailHelper.php';
 
 $required = ['classCode', 'defaultPassword', 'csvContent'];
 foreach ($required as $field) {
@@ -51,6 +52,7 @@ $stmt->bind_param('ssssis', $email, $passwordHash, $userName, $classCode, $statu
 $inserted = 0;
 $skipped = 0;
 $errors = [];
+$createdUsers = []; // Store user details for sending emails
 
 $mysqli->begin_transaction();
 
@@ -84,9 +86,49 @@ try {
             continue;
         }
         $inserted++;
+        
+        // Store user details for email
+        $createdUsers[] = [
+            'email' => $email,
+            'userName' => $userName,
+            'classCode' => $classCode
+        ];
     }
 
     $mysqli->commit();
+    
+    // Send welcome emails after successful commit
+    if (!empty($createdUsers)) {
+        try {
+            $emailHelper = new EmailHelper();
+            $logoUrl = $config['api'] . '/images/exeter_bw.png';
+            $loginUrl = $config['api'];
+            $emailsSent = 0;
+            
+            foreach ($createdUsers as $user) {
+                try {
+                    $emailHelper->sendTemplateEmail(
+                        $user['email'],
+                        'Welcome to NCFE Level 2 Certificate System',
+                        'welcome.html',
+                        [
+                            'USER_NAME' => $user['userName'],
+                            'EMAIL' => $user['email'],
+                            'PASSWORD' => $defaultPassword,
+                            'LOGO_URL' => $logoUrl,
+                            'LOGIN_URL' => $loginUrl
+                        ]
+                    );
+                    $emailsSent++;
+                } catch (Exception $e) {
+                    log_info('Failed to send welcome email to ' . $user['email'] . ': ' . $e->getMessage());
+                }
+            }
+            log_info("Sent $emailsSent welcome emails out of $inserted created users");
+        } catch (Exception $e) {
+            log_info('Email helper initialization failed: ' . $e->getMessage());
+        }
+    }
 } catch (Exception $e) {
     $mysqli->rollback();
     log_info('Bulk upload failed: ' . $e->getMessage());

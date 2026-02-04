@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 3px solid #003366;
+        }
+        .logo {
+            max-width: 200px;
+            height: auto;
+        }
+        .content {
+            padding: 30px 0;
+        }
+        .credentials {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .credentials strong {
+            color: #003366;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #003366;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+        }
+        .important {
+            background-color: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="{{LOGO_URL}}" alt="Exeter College" class="logo">
+        <h1>Welcome to NCFE Level 2</h1>
+    </div>
+    
+    <div class="content">
+        <p>Hello <strong>{{USER_NAME}}</strong>,</p>
+        
+        <p>Your account has been successfully created for the NCFE Level 2 Certificate system.</p>
+        
+        <div class="credentials">
+            <h3>Your Login Details:</h3>
+            <p><strong>Username (Email):</strong> {{EMAIL}}</p>
+            <p><strong>Temporary Password:</strong> {{PASSWORD}}</p>
+        </div>
+        
+        <div class="important">
+            <strong>⚠️ Important Security Notice</strong>
+            <p>For your security, please log in and change your password immediately upon first access.</p>
+        </div>
+        
+        <p style="text-align: center;">
+            <a href="{{LOGIN_URL}}" class="button">Login to System</a>
+        </p>
+        
+        <h3>What to do next:</h3>
+        <ol>
+            <li>Click the button above to access the login page</li>
+            <li>Enter your email address and temporary password</li>
+            <li>Navigate to your profile to change your password</li>
+            <li>Begin working on your assigned units</li>
+        </ol>
+        
+        <p>If you experience any issues logging in, please contact your teacher during lesson time.</p>
+    </div>
+    
+    <div class="footer">
+        <p>NCFE Level 2 Certificate System | Exeter College</p>
+        <p>This is an automated message. Please do not reply to this email.</p>
+    </div>
+</body>
+</html>

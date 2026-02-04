@@ -1,0 +1,13 @@
+{
+    "name": "ncfel2/api",
+    "description": "NCFEL2 API with email support",
+    "type": "project",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ncfel2\\Api\\": "src/"
+        }
+    }
+}

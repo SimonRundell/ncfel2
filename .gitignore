@@ -15,9 +15,12 @@ dist-ssr
 # Local secrets/config
 api/.config.json
 public/.config.json
+.config.json
 
-# Personal lockfile
-package-lock-PETER.json
+# Composer
+api/vendor/
+api/composer.lock
+api/server.log
 
 # Editor directories and files
 .vscode/*

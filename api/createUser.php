@@ -1,5 +1,6 @@
 <?php
 include 'setup.php';
+require_once __DIR__ . '/emailHelper.php';
 
 $required = ['email', 'passwordHash', 'userName'];
 foreach ($required as $field) {
@@ -23,6 +24,8 @@ $email = trim($receivedData['email']);
 $passwordHash = trim($receivedData['passwordHash']);
 $userName = trim($receivedData['userName']);
 $classCode = isset($receivedData['classCode']) && $receivedData['classCode'] !== '' ? trim($receivedData['classCode']) : null;
+// Store the plain text password temporarily for the email (if provided)
+$plainPassword = $receivedData['plainPassword'] ?? 'your-temporary-password';
 
 $stmt->bind_param('ssssis', $email, $passwordHash, $userName, $classCode, $status, $avatar);
 
@@ -31,9 +34,37 @@ if (!$stmt->execute()) {
     send_response('Execute failed: ' . $stmt->error, 500);
 }
 
+$userId = $mysqli->insert_id;
+
+// Send welcome email to new user (only if status = 0, i.e., student)
+if ($status == 0) {
+    try {
+        $emailHelper = new EmailHelper();
+        $logoUrl = $config['api'] . '/images/exeter_bw.png';
+        $loginUrl = $config['api'];
+        
+        $emailHelper->sendTemplateEmail(
+            $email,
+            'Welcome to NCFE Level 2 Certificate System',
+            'welcome.html',
+            [
+                'USER_NAME' => $userName,
+                'EMAIL' => $email,
+                'PASSWORD' => $plainPassword,
+                'LOGO_URL' => $logoUrl,
+                'LOGIN_URL' => $loginUrl
+            ]
+        );
+        log_info('Welcome email sent to ' . $email);
+    } catch (Exception $e) {
+        log_info('Failed to send welcome email: ' . $e->getMessage());
+        // Don't fail the user creation if email fails
+    }
+}
+
 $response = [
     'message' => 'User created',
-    'id' => $mysqli->insert_id,
+    'id' => $userId,
 ];
 
 send_response($response, 201);

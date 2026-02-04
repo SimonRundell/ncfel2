@@ -1,3 +1,18 @@
+/**
+ * @fileoverview Main application component for NCFE Level 2 Certificate System
+ * 
+ * This is the root component that orchestrates the entire application. It handles:
+ * - Configuration loading from .config.json
+ * - User authentication state management
+ * - Message notifications (success/error)
+ * - Conditional rendering based on user role and login status
+ * - Role-based view routing (Admin Panel vs Student Assignments)
+ * 
+ * @requires react
+ * @requires antd - Ant Design UI library for message notifications
+ * @requires axios - HTTP client for API requests
+ */
+
 import { useState, useEffect } from 'react'
 import './App.css'
 import {Spin, message} from 'antd';
@@ -8,16 +23,77 @@ import StudentProfile from './StudentProfile.jsx';
 import StudentAssignments from './StudentAssignments.jsx';
 import axios from 'axios';
 
-
+/**
+ * App Component - Root component of the NCFE Level 2 Certificate System
+ * 
+ * Flow:
+ * 1. On mount, loads configuration from /.config.json with cache-busting
+ * 2. If no user is logged in, displays Login component
+ * 3. Once authenticated, displays appropriate view based on user status:
+ *    - Status 3 (Admin): Full AdminPanel with all management tabs
+ *    - Status 0/2 (Student/Teacher): StudentAssignments view
+ * 4. Provides global error/success message handling via Ant Design
+ * 
+ * @component
+ * @returns {JSX.Element} The main application interface
+ * 
+ * @example
+ * // In main.jsx
+ * import App from './App.jsx'
+ * createRoot(document.getElementById('root')).render(<App />)
+ */
 function App() {
+  /**
+   * @type {[Object|null, Function]} Configuration object loaded from .config.json
+   * @property {string} api - Base URL for API endpoints
+   */
   const [config, setConfig] = useState(null);
+  
+  /**
+   * @type {[Object, Function]} Ant Design message API for notifications
+   */
   const [messageApi, contextHolder] = message.useMessage();
+  
+  /**
+   * @type {[Object|null, Function]} Currently logged-in user object
+   * @property {number} id - User ID
+   * @property {string} email - User email (also username)
+   * @property {string} userName - Display name
+   * @property {string} classCode - Class code (for students)
+   * @property {number} status - User role (0=student, 2=teacher, 3=admin)
+   * @property {string} avatar - Base64 encoded avatar image
+   */
   const [currentUser, setCurrentUser] = useState(null);
+  
+  /**
+   * @type {[string|boolean, Function]} Success message to display
+   */
   const [sendSuccessMessage, setSendSuccessMessage] = useState(false);
+  
+  /**
+   * @type {[string|boolean, Function]} Error message to display
+   */
   const [sendErrorMessage, setSendErrorMessage] = useState(false);
+  
+  /**
+   * @type {[boolean, Function]} Toggle admin panel visibility
+   */
   const [showAdmin, setShowAdmin] = useState(false);
+  
+  /**
+   * @type {[boolean, Function]} Toggle profile modal visibility
+   */
   const [showProfile, setShowProfile] = useState(false);
 
+  /**
+   * Configuration Loading Effect
+   * 
+   * Loads application configuration from /.config.json on component mount.
+   * Uses cache-busting timestamp to ensure fresh config on reload.
+   * 
+   * @effect
+   * @dependency {Function} messageApi - For displaying load status
+   */
    useEffect(() => {
     // Add cache busting parameter to force fresh config load
     const timestamp = new Date().getTime();
@@ -33,6 +109,26 @@ function App() {
       });
   }, [messageApi]);
 
+/**
+ * Success Message Display Effect
+ * 
+ * Monitors sendSuccessMessage state and displays success notification
+ * when value changes. Automatically resets message after display.
+ * 
+ * @effect
+ * @dependency {string|boolean} sendSuccessMessage - Message to display
+ */**
+   * Error Message Display Effect
+   * 
+   * Monitors sendErrorMessage state and displays error notification
+   * when value changes.
+   * 
+   * @effect
+   * @dependency {string|boolean} sendErrorMessage - Error message to display
+   * @dependency {Function} messageApi - Ant Design message API
+   */
+   @dependency {Function} messageApi - Ant Design message API
+ */
 useEffect(() => {
     if (sendSuccessMessage) {
        messageApi.success(sendSuccessMessage);

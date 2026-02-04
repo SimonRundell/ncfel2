@@ -468,8 +468,8 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onError }) => {
     return (
       <div className="qa-block">
         <div className="qa-question">
-          <div className="question-ref">{question.QuestionRef || `Q${question.id}`}</div>
-          <div className="question-text" dangerouslySetInnerHTML={{ __html: question.Question }} />
+          <span className="question-ref">{question.QuestionRef || `Q${question.id}`}</span>
+          <span className="question-text" dangerouslySetInnerHTML={{ __html: question.Question }} />
         </div>
         <div className="qa-answer">
           <div className="answer-toolbar">

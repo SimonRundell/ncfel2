@@ -1,5 +1,6 @@
 <?php
 include 'setup.php';
+require_once __DIR__ . '/emailHelper.php';
 
 $activityId = $receivedData['activityId'] ?? null;
 $studentId = $receivedData['studentId'] ?? null;
@@ -72,6 +73,85 @@ $response = [
 
 if ($saved === 0) {
     send_response('No answers were persisted. Check that answers table has columns (activityId, studentId, questionId, answer, references, status, updatedAt) and a UNIQUE KEY on (activityId, questionId, studentId).', 500);
+}
+
+// Send email to teachers if status is SUBMITTED
+if ($status === 'SUBMITTED') {
+    try {
+        // Get student details
+        $studentQuery = 'SELECT email, userName, classCode FROM user WHERE id = ?';
+        $stmtStudent = $mysqli->prepare($studentQuery);
+        if ($stmtStudent) {
+            $stmtStudent->bind_param('i', $studentId);
+            $stmtStudent->execute();
+            $studentResult = $stmtStudent->get_result();
+            $student = $studentResult->fetch_assoc();
+            
+            if ($student) {
+                // Get activity/unit details
+                $activityQuery = 'SELECT ca.id, ca.unitId, u.name as unitName 
+                                 FROM currentActivities ca 
+                                 LEFT JOIN unit u ON ca.unitId = u.id 
+                                 WHERE ca.id = ?';
+                $stmtActivity = $mysqli->prepare($activityQuery);
+                if ($stmtActivity) {
+                    $stmtActivity->bind_param('i', $activityId);
+                    $stmtActivity->execute();
+                    $activityResult = $stmtActivity->get_result();
+                    $activity = $activityResult->fetch_assoc();
+                    
+                    // Get teachers (status = 2) for this class
+                    $teacherQuery = 'SELECT email, userName FROM user WHERE status = 2';
+                    if ($student['classCode']) {
+                        $teacherQuery .= ' AND (classCode = ? OR classCode IS NULL)';
+                    }
+                    $stmtTeacher = $mysqli->prepare($teacherQuery);
+                    
+                    if ($stmtTeacher) {
+                        if ($student['classCode']) {
+                            $stmtTeacher->bind_param('s', $student['classCode']);
+                        }
+                        $stmtTeacher->execute();
+                        $teacherResult = $stmtTeacher->get_result();
+                        
+                        $teacherEmails = [];
+                        while ($teacher = $teacherResult->fetch_assoc()) {
+                            $teacherEmails[] = $teacher['email'];
+                        }
+                        
+                        if (!empty($teacherEmails)) {
+                            $emailHelper = new EmailHelper();
+                            $logoUrl = $config['api'] . '/images/exeter_bw.png';
+                            $systemUrl = $config['api'];
+                            $timestamp = date('Y-m-d H:i:s');
+                            
+                            $emailHelper->sendTemplateEmail(
+                                $teacherEmails,
+                                'Unit Submission: ' . $student['userName'] . ' - ' . ($activity['unitName'] ?? 'Unit'),
+                                'unit-submission.html',
+                                [
+                                    'TEACHER_NAME' => 'Teacher',
+                                    'STUDENT_NAME' => $student['userName'],
+                                    'STUDENT_EMAIL' => $student['email'],
+                                    'CLASS_CODE' => $student['classCode'] ?? 'N/A',
+                                    'UNIT_NAME' => $activity['unitName'] ?? 'Unknown Unit',
+                                    'ACTIVITY_ID' => $activityId,
+                                    'TIMESTAMP' => $timestamp,
+                                    'QUESTIONS_COUNT' => $total,
+                                    'LOGO_URL' => $logoUrl,
+                                    'SYSTEM_URL' => $systemUrl
+                                ]
+                            );
+                            log_info('Submission notification emails sent to ' . count($teacherEmails) . ' teachers');
+                        }
+                    }
+                }
+            }
+        }
+    } catch (Exception $e) {
+        log_info('Failed to send submission notification email: ' . $e->getMessage());
+        // Don't fail the save operation if email fails
+    }
 }
 
 send_response($response, 200);
