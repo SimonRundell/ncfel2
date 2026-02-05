@@ -114,7 +114,7 @@ function App() {
     axios.get(`/.config.json?t=${timestamp}`)
       .then(response => {
         setConfig(response.data);
-        console.log('Config loaded:', response.data);
+        // console.log('Config loaded:', response.data);
         messageApi.success('Config loaded');
       })
       .catch(error => {
@@ -154,7 +154,7 @@ useEffect(() => {
       <div className="app-header">
         <div className="header-row">
           <img className="logo" src="images/ncfe.png" alt="NCFE Logo" />
-          <div className="app-title">NCFE Level 2 Certificate</div>
+          <div className="app-title">Level 2 Certificate</div>
           <img className="logo" src="images/exeter_logo.png" alt="Exeter College" />
         </div>
       </div>

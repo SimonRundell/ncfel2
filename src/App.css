@@ -171,9 +171,10 @@ Containers
   white-space: nowrap;
 }
 
-/* .assessment-tag :hover {
+.assessment-tag :hover {
   border-color: #646cff;
-} */
+}
+
 
 /************************************************
 
@@ -1279,5 +1280,28 @@ MARKING DASHBOARD
 .reference-note {
   color: #9a9a9a;
   font-size: 0.9rem;
+}
+
+/************************************************
+
+PRINT STYLES
+
+*************************************************/
+
+@media print {
+  .no-print, .modal-backdrop {
+    display: none !important;
+  }
+  
+  body {
+    background: white;
+  }
+  
+  .modal {
+    position: static !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+  }
 }
 

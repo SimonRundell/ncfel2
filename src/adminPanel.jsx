@@ -153,7 +153,12 @@ function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
                                                 setActiveSection('users');
                                             }}>{student.userName}</span>
                                             <span className="biggergap">
-                                                <IndividualAssessment config={config} onError={notifyError} id={student.id} />
+                                                <IndividualAssessment 
+                                                    config={config} 
+                                                    notifyError={notifyError} 
+                                                    id={student.id}
+                                                    studentName={student.userName}
+                                                />
                                             </span>
                                         </li>
                                     ))}

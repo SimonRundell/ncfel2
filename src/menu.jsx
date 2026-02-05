@@ -30,7 +30,7 @@ function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange }) {
               onClick={() => onViewChange('report')}
               className={activeView === 'report' ? 'menu-toggle active' : 'menu-toggle'}
             >
-              Assessment Report
+              Assessment Overview
             </button>
             <button
               type="button"
