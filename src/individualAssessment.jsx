@@ -100,13 +100,219 @@ useEffect(() => {
         setAssessorName('')
     }
 
-    const handlePrint = () => {
-        window.print()
-    }
-
     const getAchievedStatus = (status) => {
         if (status === 'PASSED' || status === 'COMPLETE') return 'ACHIEVED'
         return 'NOT YET ACHIEVED'
+    }
+
+    const handlePrint = () => {
+        const printWindow = window.open('', '_blank')
+        const reportContent = generateReportHTML()
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Assessor Feedback - ${studentName}</title>
+                <style>
+                    body {
+                        margin: 0;
+                        padding: 20px;
+                        font-family: Arial, sans-serif;
+                        background: white;
+                        color: black;
+                    }
+                    table {
+                        width: 100%;
+                        border: 2px solid black;
+                        border-collapse: collapse;
+                    }
+                    td, th {
+                        border: 1px solid black;
+                        padding: 0.5rem;
+                    }
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        margin-bottom: 1rem;
+                    }
+                    .exeter {
+                        font-size: 1.2rem;
+                        color: #0066cc;
+                        font-weight: bold;
+                    }
+                    h2 {
+                        font-size: 1.5rem;
+                        margin: 1rem 0;
+                    }
+                    .legend {
+                        display: flex;
+                        gap: 1rem;
+                        font-size: 0.9rem;
+                        margin-top: 0.5rem;
+                    }
+                    .legend-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    }
+                    .legend-box {
+                        width: 30px;
+                        height: 20px;
+                        border: 1px solid black;
+                    }
+                    .achieved { background-color: #90EE90; }
+                    .working { background-color: #FFB6C1; }
+                    .not-submitted { background-color: #FFFFFF; }
+                    .signature {
+                        font-family: 'Brush Script MT', cursive;
+                        font-size: 1.5rem;
+                    }
+                    @media print {
+                        body { padding: 0; }
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${reportContent}
+                <div class="no-print" style="margin-top: 1rem; text-align: center;">
+                    <button onclick="window.print()" style="padding: 0.75rem 1.5rem; margin-right: 0.5rem;">Print</button>
+                    <button onclick="window.close()" style="padding: 0.75rem 1.5rem;">Close</button>
+                </div>
+            </body>
+            </html>
+        `)
+        printWindow.document.close()
+    }
+
+    const generateReportHTML = () => {
+        const achievedStatus = getAchievedStatus(selectedAssessment?.status)
+        
+        let questionsHTML = questions.map(question => {
+            const outcome = answers[question.id]
+            const achieved = outcome === 'achieved' || outcome === 'ACHIEVED'
+            const bgClass = outcome ? (achieved ? 'achieved' : 'working') : 'not-submitted'
+            const symbol = outcome ? (achieved ? '✓' : '✗') : '-'
+            
+            return `<th style="text-align: center; min-width: 50px;">${question.QuestionRef}</th>`
+        }).join('')
+        
+        let answersHTML = questions.map(question => {
+            const outcome = answers[question.id]
+            const achieved = outcome === 'achieved' || outcome === 'ACHIEVED'
+            const bgClass = outcome ? (achieved ? 'achieved' : 'working') : 'not-submitted'
+            const symbol = outcome ? (achieved ? '✓' : '✗') : '-'
+            
+            return `<td class="${bgClass}" style="text-align: center; font-size: 1.2em; padding: 0.75rem;">${symbol}</td>`
+        }).join('')
+        
+        return `
+            <div class="header">
+                <img src="/images/ncfe_bw.png" alt="NCFE" style="height: 60px;" />
+                <div class="exeter">exeter college</div>
+            </div>
+            
+            <h2>Assessor Feedback to Learner</h2>
+            
+            <table>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: bold; width: 15%;">Learner</td>
+                        <td style="width: 35%;">${studentName || ''}</td>
+                        <td style="font-weight: bold; width: 15%;">Assessor</td>
+                        <td style="width: 35%;">${assessorName}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="font-weight: bold;">Qualification No & Name</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4">NCFE Level 2 ${selectedAssessment?.courseName || ''}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="font-weight: bold;">Unit / piece of evidence</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4">${selectedAssessment?.unitName || ''}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4"><strong>Please list the units, learning outcomes and assessment criteria which were achieved</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4"><strong>Assessment Criteria:</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="padding: 1rem;">
+                            <table style="width: 100%; margin-bottom: 1rem;">
+                                <thead>
+                                    <tr>${questionsHTML}</tr>
+                                </thead>
+                                <tbody>
+                                    <tr>${answersHTML}</tr>
+                                </tbody>
+                            </table>
+                            <div class="legend">
+                                <div class="legend-item">
+                                    <div class="legend-box achieved"></div>
+                                    <span>Achieved</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-box working"></div>
+                                    <span>Working towards</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-box not-submitted"></div>
+                                    <span>Not submitted</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="font-weight: bold;">Feedback from Assessor to Learner</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="padding: 1rem; min-height: 100px; vertical-align: top;">
+                            ${selectedAssessment?.assessorComment || ''}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4">
+                            <strong>Has the learner achieved or not yet achieved?</strong> 
+                            <span style="margin-left: 1rem;">${achievedStatus}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="font-weight: bold;">Feedback from Learner</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="padding: 1rem; min-height: 80px; vertical-align: top;"></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold;">Learner Signature</td>
+                        <td style="min-height: 40px;"></td>
+                        <td style="font-weight: bold;">Date</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold;">Assessor Signature</td>
+                        <td class="signature">${assessorName}</td>
+                        <td style="font-weight: bold;">Date</td>
+                        <td>${selectedAssessment?.dateMarked ? new Date(selectedAssessment.dateMarked).toLocaleDateString() : ''}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold;">IV Name</td>
+                        <td colspan="3" style="min-height: 40px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold;">IV Signature</td>
+                        <td style="min-height: 40px;"></td>
+                        <td style="font-weight: bold;">Date</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        `
     }
 
 
