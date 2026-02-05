@@ -9,6 +9,7 @@ const READY_STATUSES = ['SUBMITTED', 'RESUBMITTED'];
 const MARKING_STATUSES = ['INMARKING', 'INREMARKING'];
 const OUTCOME_ACHIEVED = 'ACHIEVED';
 const OUTCOME_NOT_ACHIEVED = 'NOT ACHIEVED';
+const DEFAULT_ASSESSOR_COMMENT = '';
 
 const AnswerPreview = ({ content }) => {
   const editor = useEditor({
@@ -41,6 +42,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
   const [answers, setAnswers] = useState({});
   const [outcomes, setOutcomes] = useState({});
   const [comments, setComments] = useState({});
+  const [assessorComment, setAssessorComment] = useState(DEFAULT_ASSESSOR_COMMENT);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -176,6 +178,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
       setAnswers(answersPayload.answers || {});
       setOutcomes(answersPayload.outcomes || {});
       setComments(answersPayload.comments || {});
+      setAssessorComment(answersPayload.assessorComment || DEFAULT_ASSESSOR_COMMENT);
 
       if (READY_STATUSES.includes(activity.status)) {
         const nextStatus = activity.status === 'SUBMITTED' ? 'INMARKING' : 'INREMARKING';
@@ -235,6 +238,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
           activityId: selectedSubmission.id,
           studentId: selectedSubmission.studentId,
           marks: marksPayload,
+          assessorComment,
           finalStatus,
         },
         { headers: { 'Content-Type': 'application/json' } }
@@ -263,6 +267,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
       setAnswers({});
       setOutcomes({});
       setComments({});
+      setAssessorComment(DEFAULT_ASSESSOR_COMMENT);
 
       const refreshed = await axios.get(`${config.api}/getCurrentActivities.php`, {
         headers: { 'Content-Type': 'application/json' },
@@ -342,7 +347,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
           <div className="marking-workspace-header">
             <div>
               <div className="marking-workspace-title">{studentMap[selectedSubmission.studentId] || 'Student'}</div>
-              <div className="marking-workspace-meta">{unitMap[selectedSubmission.unitId] || `Unit ${selectedSubmission.unitId}`} · {courseMap[selectedSubmission.courseId] || `Course ${selectedSubmission.courseId}`}</div>
+              <div className="marking-workspace-meta">{unitMap[selectedSubmission.unitCode] || `Unit ${selectedSubmission.unitCode}`} · {courseMap[selectedSubmission.courseId] || `Course ${selectedSubmission.courseId}`}</div>
               <div className="marking-workspace-meta">Current status: {selectedSubmission.status}</div>
             </div>
             <div className="marking-workspace-actions">
@@ -377,7 +382,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
                 </label>
                 <textarea
                   className="marking-comment"
-                  placeholder="Marker comment (optional)"
+                  placeholder="Assessor comment (optional)"
                   value={comments[q.id] || ''}
                   onChange={(e) => handleCommentChange(q.id, e.target.value)}
                   rows={2}
@@ -386,6 +391,26 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
               </div>
             </div>
           ))}
+
+          {!loading && (
+            <div className="marking-question">
+              <div className="marking-question-header">
+                <div className="marking-question-ref">Assessor feedback</div>
+                <div className="marking-question-text">Overall feedback for this assessment</div>
+              </div>
+              <div className="marking-controls">
+                <textarea
+                  className="marking-comment"
+                  placeholder="Assessor comment (optional)"
+                  value={assessorComment}
+                  onChange={(e) => setAssessorComment(e.target.value.slice(0, 500))}
+                  rows={3}
+                  maxLength={500}
+                />
+                <div className="marking-comment-help">Shared for both marking and remarking.</div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

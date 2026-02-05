@@ -5,7 +5,11 @@ if (!isset($receivedData['courseid'], $receivedData['unitName'])) {
     send_response('Missing courseid or unitName', 400);
 }
 
-$query = 'INSERT INTO unit (courseid, unitName) VALUES (?, ?)';
+if (!isset($receivedData['unitCode']) || trim($receivedData['unitCode']) === '') {
+    send_response('Missing unitCode', 400);
+}
+
+$query = 'INSERT INTO unit (courseid, unitName, unitCode) VALUES (?, ?, ?)';
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {
@@ -15,7 +19,8 @@ if (!$stmt) {
 
 $courseId = (int) $receivedData['courseid'];
 $unitName = trim($receivedData['unitName']);
-$stmt->bind_param('is', $courseId, $unitName);
+$unitCode = trim($receivedData['unitCode']);
+$stmt->bind_param('iss', $courseId, $unitName, $unitCode);
 
 if (!$stmt->execute()) {
     log_info('Execute failed: ' . $stmt->error);

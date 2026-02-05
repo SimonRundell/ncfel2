@@ -5,6 +5,7 @@ import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers
 const CourseManager = ({ config, onSuccess, onError }) => {
   const [courses, setCourses] = useState([]);
   const [courseName, setCourseName] = useState('');
+  const [courseCode, setCourseCode] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -35,13 +36,14 @@ const CourseManager = ({ config, onSuccess, onError }) => {
 
   const resetForm = () => {
     setCourseName('');
+    setCourseCode('');
     setEditingId(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!courseName.trim()) {
-      onError('Course name required');
+    if (!courseName.trim() || !courseCode.trim()) {
+      onError('Course name and code required');
       return;
     }
 
@@ -50,14 +52,14 @@ const CourseManager = ({ config, onSuccess, onError }) => {
       if (editingId) {
         await axios.post(
           `${config.api}/updateCourse.php`,
-          { id: editingId, courseName: courseName.trim() },
+          { id: editingId, courseName: courseName.trim(), courseCode: courseCode.trim() },
           { headers: { 'Content-Type': 'application/json' } }
         );
         onSuccess('Course updated');
       } else {
         const response = await axios.post(
           `${config.api}/createCourse.php`,
-          { courseName: courseName.trim() },
+          { courseName: courseName.trim(), courseCode: courseCode.trim() },
           { headers: { 'Content-Type': 'application/json' } }
         );
         onSuccess(getMessageFromResponse(response.data, 'Course created'));
@@ -75,6 +77,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
   const handleEdit = (course) => {
     setEditingId(course.id);
     setCourseName(course.courseName || '');
+    setCourseCode(course.courseCode || '');
   };
 
   const handleDelete = async (course) => {
@@ -121,6 +124,15 @@ const CourseManager = ({ config, onSuccess, onError }) => {
             placeholder="e.g. Cyber Security"
           />
         </label>
+        <label className="admin-label">
+          Course code
+          <input
+            type="text"
+            value={courseCode}
+            onChange={(e) => setCourseCode(e.target.value)}
+            placeholder="e.g. CS101"
+          />
+        </label>
         <div className="admin-form-actions">
           {editingId && (
             <button type="button" onClick={resetForm} disabled={loading}>
@@ -138,7 +150,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
           <div className="admin-row" key={course.id}>
             <div>
               <div className="admin-row-title">{course.courseName}</div>
-              <div className="admin-row-subtitle">ID: {course.id}</div>
+                <div className="admin-row-subtitle">ID: {course.id} · Code: {course.courseCode || '—'}</div>
             </div>
             <div className="admin-row-actions">
               <button type="button" onClick={() => handleEdit(course)} disabled={loading}>

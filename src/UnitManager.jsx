@@ -7,7 +7,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterCourseId, setFilterCourseId] = useState('');
-  const [form, setForm] = useState({ id: null, courseid: '', unitName: '' });
+  const [form, setForm] = useState({ id: null, courseid: '', unitName: '', unitCode: '' });
 
   const loadCourses = async () => {
     if (!config?.api) return;
@@ -60,18 +60,18 @@ const UnitManager = ({ config, onSuccess, onError }) => {
     loadUnits();
   }, [config, filterCourseId]);
 
-  const resetForm = () => setForm({ id: null, courseid: '', unitName: '' });
+  const resetForm = () => setForm({ id: null, courseid: '', unitName: '', unitCode: '' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.courseid || !form.unitName.trim()) {
-      onError('Course and unit name required');
+    if (!form.courseid || !form.unitName.trim() || !form.unitCode.trim()) {
+      onError('Course, unit name and unit code required');
       return;
     }
 
     setLoading(true);
     try {
-      const payload = { courseid: Number(form.courseid), unitName: form.unitName.trim() };
+      const payload = { courseid: Number(form.courseid), unitName: form.unitName.trim(), unitCode: form.unitCode.trim() };
       if (form.id) {
         await axios.post(
           `${config.api}/updateUnit.php`,
@@ -98,7 +98,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
   };
 
   const handleEdit = (unit) => {
-    setForm({ id: unit.id, courseid: unit.courseid, unitName: unit.unitName || '' });
+    setForm({ id: unit.id, courseid: unit.courseid, unitName: unit.unitName || '', unitCode: unit.unitCode || '' });
   };
 
   const handleDelete = async (unit) => {
@@ -172,6 +172,15 @@ const UnitManager = ({ config, onSuccess, onError }) => {
             placeholder="e.g. Networking"
           />
         </label>
+        <label className="admin-label">
+          Unit code
+          <input
+            type="text"
+            value={form.unitCode}
+            onChange={(e) => setForm((prev) => ({ ...prev, unitCode: e.target.value }))}
+            placeholder="e.g. NET-201"
+          />
+        </label>
         <div className="admin-form-actions">
           {form.id && (
             <button type="button" onClick={resetForm} disabled={loading}>
@@ -190,7 +199,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
             <div>
               <div className="admin-row-title">{unit.unitName}</div>
               <div className="admin-row-subtitle">
-                ID: {unit.id} · Course ID: {unit.courseid}
+                ID: {unit.id} · Code: {unit.unitCode || '—'} · Course ID: {unit.courseid}
               </div>
             </div>
             <div className="admin-row-actions">

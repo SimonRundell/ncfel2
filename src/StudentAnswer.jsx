@@ -21,6 +21,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
   const [answers, setAnswers] = useState({}); // questionId -> {json}
   const [outcomes, setOutcomes] = useState({}); // questionId -> outcome
   const [markerComments, setMarkerComments] = useState({}); // questionId -> marker comment
+  const [assessorComment, setAssessorComment] = useState('');
   const storageKey = useMemo(() => `answer-${activity?.id || 'unknown'}`, [activity?.id]);
   const refsKey = useMemo(() => `answer-refs-${activity?.id || 'unknown'}`, [activity?.id]);
   const blockTimer = useRef(null);
@@ -174,6 +175,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         const serverStatus = payload.status || 'INPROGRESS';
         const serverOutcomes = payload.outcomes || {};
         const serverComments = payload.comments || {};
+        const serverAssessorComment = payload.assessorComment || '';
 
         if (!Object.keys(serverAnswers).length) return;
 
@@ -183,6 +185,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         setAnswers(serverAnswers);
         setOutcomes(serverOutcomes);
         setMarkerComments(serverComments);
+        setAssessorComment(serverAssessorComment);
         setRefsMap((prev) => {
           const next = { ...prev };
           Object.keys(serverRefs).forEach((qid) => {
@@ -406,6 +409,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     setRefsMap({});
     setOutcomes({});
     setMarkerComments({});
+    setAssessorComment('');
     setActivityStatus('INPROGRESS');
     setStatusText('IN PROGRESS · Draft cleared');
   };
@@ -688,6 +692,14 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
 
           {/* per-question editors above */}
           {blockMessage && <div className="answer-blocked">{blockMessage}</div>}
+
+          {assessorComment && (
+            <div className="student-assignment-card">
+              <div className="student-assignment-title">Assessor feedback</div>
+              <div className="student-assignment-meta">Overall feedback from your assessor</div>
+              <div className="student-assignment-value">{assessorComment}</div>
+            </div>
+          )}
 
           <div className="modal-actions">
             <button type="button" onClick={handleSaveDraft} disabled={loading || formLocked}>

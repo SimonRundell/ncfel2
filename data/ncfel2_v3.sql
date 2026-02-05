@@ -60,6 +60,7 @@ DROP TABLE IF EXISTS `course`;
 CREATE TABLE `course`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `courseName` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '',
+  'courseCode' varchar(35) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
@@ -83,6 +84,7 @@ CREATE TABLE `currentactivity`  (
   `dateMarked` datetime NULL DEFAULT NULL,
   `dateResubmitted` datetime NULL DEFAULT NULL,
   `dateComplete` datetime NULL DEFAULT NULL,
+  'assessorComment' TEXT NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
@@ -114,83 +116,6 @@ INSERT INTO `questions` VALUES (4, 1, 1, '2.4', '<p>Identify different roles wit
 INSERT INTO `questions` VALUES (5, 1, 1, '2.5', '<p>Explain why team working is important in coding</p>');
 INSERT INTO `questions` VALUES (6, 1, 1, '2.6', '<p>Identify different careers and career progression available</p>');
 INSERT INTO `questions` VALUES (7, 1, 1, '3.1', '<p>Identify the key stages of the software development lifecycle</p>');
-INSERT INTO `questions` VALUES (8, 1, 1, '3.2', '<p>Explain the different stages of the software development lifecycle</p>');
-INSERT INTO `questions` VALUES (9, 1, 1, '3.3', '<p>Describe the importance of the planning stage</p>');
-INSERT INTO `questions` VALUES (10, 1, 1, '3.4', '<p>Identify actions that may take place during the implementation stage</p>');
-INSERT INTO `questions` VALUES (11, 1, 1, '3.5', '<p>Explain the importance of the testing stage</p>');
-INSERT INTO `questions` VALUES (12, 1, 1, '3.6', '<p>Describe actions that may take place during the deployment stage</p>');
-INSERT INTO `questions` VALUES (13, 1, 1, '3.7', '<p>Explain the importance of the maintenance stage</p>');
-INSERT INTO `questions` VALUES (14, 1, 2, '1.1', '<p>Define what is meant by Central Processing Unit (CPU)</p>');
-INSERT INTO `questions` VALUES (15, 1, 2, '1.2', '<p>Explain the function of Random-Access Memory (RAM)</p>');
-INSERT INTO `questions` VALUES (16, 1, 2, '1.3', '<p>Define the term ‘data’</p>');
-INSERT INTO `questions` VALUES (17, 1, 2, '1.4', '<p>Identify the key purpose of data types used in coding</p>');
-INSERT INTO `questions` VALUES (18, 1, 2, '1.5', '<p>Identify ways that data can be stored</p><p>Learning Outcome 2: Understand coding acronyms and terminology</p>');
-INSERT INTO `questions` VALUES (19, 1, 2, '2.1', '<p>Describe what is meant by a unit of code</p>');
-INSERT INTO `questions` VALUES (20, 1, 2, '2.2', '<p>Identify the key characteristics of DRY code</p>');
-INSERT INTO `questions` VALUES (21, 1, 2, '2.3', '<p>Identify the key characteristics of WET code</p>');
-INSERT INTO `questions` VALUES (22, 1, 2, '2.4', '<p>Explain the key differences between DRY and WET code</p>');
-INSERT INTO `questions` VALUES (23, 1, 2, '2.5', '<p>Describe what is meant by open source code</p>');
-INSERT INTO `questions` VALUES (24, 1, 2, '2.6', '<p>Describe what is meant by closed source code</p><p>Learning Outcome 3: Understand key principles when writing code</p>');
-INSERT INTO `questions` VALUES (25, 1, 2, '3.1', '<p>Explain what is meant by the term ‘collection’</p>');
-INSERT INTO `questions` VALUES (26, 1, 2, '3.2', '<p>Explain what is meant by control flow</p>');
-INSERT INTO `questions` VALUES (27, 1, 2, '3.3', '<p>Define what is meant by iterations</p>');
-INSERT INTO `questions` VALUES (28, 1, 2, '3.4', '<p>Define what is meant by recursions</p>');
-INSERT INTO `questions` VALUES (29, 1, 2, '3.5', '<p>Explain the use of queues, stacks and lists</p>');
-INSERT INTO `questions` VALUES (30, 1, 2, '3.6', '<p>Explain the use of variables</p>');
-INSERT INTO `questions` VALUES (31, 1, 2, '3.7', '<p>Describe the principles of functions</p>');
-INSERT INTO `questions` VALUES (32, 1, 2, '3.8', '<p>Define operands/operations</p>');
-INSERT INTO `questions` VALUES (33, 1, 3, '2.1', '<p>Define the term compiled code</p>');
-INSERT INTO `questions` VALUES (34, 1, 3, '2.2', '<p>Define the term interpreted code</p>');
-INSERT INTO `questions` VALUES (35, 1, 3, '2.3', '<p>Explain the principles of</p><p>• compiled code</p><p>• interpreted code</p>');
-INSERT INTO `questions` VALUES (36, 1, 3, '2.4', '<p>Explain the advantages and disadvantages of:</p><p>• compiled code</p><p>• interpreted code</p><p>Learning Outcome 3: Understand what is meant by a pure function</p>');
-INSERT INTO `questions` VALUES (37, 1, 3, '3.1', '<p>Define the term ‘pure function’</p>');
-INSERT INTO `questions` VALUES (38, 1, 3, '3.2', '<p>Define the term ‘impure function’</p>');
-INSERT INTO `questions` VALUES (39, 1, 3, '3.3', '<p>Identify potential dependencies/needs in pure function</p>');
-INSERT INTO `questions` VALUES (40, 1, 3, '3.4', '<p>Explain the benefits of pure function</p>');
-INSERT INTO `questions` VALUES (41, 1, 3, '3.5', '<p>Explain the term parallelisation</p>');
-INSERT INTO `questions` VALUES (42, 1, 3, '3.6', '<p>Describe how parallelisation is managed</p>');
-INSERT INTO `questions` VALUES (43, 1, 4, '1.1', '<p>Describe what is meant by the KISS principle</p><p>I asked you to keep your 1st self-directed app project simple. Describe what KISS means and paste a screenshot of your 1st app and explain how your app represents the concept of KISS.</p>');
-INSERT INTO `questions` VALUES (44, 1, 4, '1.2', '<p>Give examples of the disadvantages of writing complicated code</p>');
-INSERT INTO `questions` VALUES (45, 1, 4, '1.3', '<p>Define what is meant by the single responsibility principle</p><p>After defining the single responsibility paste a screenshot from your app where you have created a function which does just one thing as an example.</p>');
-INSERT INTO `questions` VALUES (46, 1, 4, '1.4', '<p>Describe what is meant by separation of concerns</p><p>Describe what this means and then describe the following software architectures as examples:</p><ul><li>MVC (Model, View, Controller – e.g. UIKit (Storyboards))</li><li>MVVM (Model, View, View Model – e.g. SwiftUI).</li></ul>');
-INSERT INTO `questions` VALUES (47, 1, 4, '1.5', '<p>Define what is meant by abstraction</p><p>Give me an example, either a function where you abstracted some functionality, or an OOP class/struct to abstract complexity.</p>');
-INSERT INTO `questions` VALUES (48, 1, 4, '1.6', '<p>Describe what is meant by solid principles</p><p>Learning Outcome 2: Understand the methods of testing code.</p>');
-INSERT INTO `questions` VALUES (49, 1, 4, '2.1', '<p>Explain what is meant by testing code</p><p>After explaining what testing code means, give me some examples of how you are testing code in your projects.</p>');
-INSERT INTO `questions` VALUES (50, 1, 4, '2.2', '<p>Explain why it is important to test code (at least 3 different reasons)</p>');
-INSERT INTO `questions` VALUES (51, 1, 4, '2.3', '<p>Identify methods of testing code (at least 4)</p>');
-INSERT INTO `questions` VALUES (52, 1, 4, '2.4', '<p>Describe the characteristics of a test-driven development (at least 3)</p>');
-INSERT INTO `questions` VALUES (53, 1, 4, '2.5', '<p>Explain the benefits of a test-driven development (at least 3)</p>');
-INSERT INTO `questions` VALUES (54, 1, 4, '2.6', '<p>Identify what is meant by a bug in relation to code</p><p>Explain what a coding bug is and add a screenshot of a bug in a program / app you are working on.</p>');
-INSERT INTO `questions` VALUES (55, 1, 4, '2.7', '<p>Describe what is meant by debugging</p><p>After describing what debugging is and some of the tools we can use, explain how you debugged the example above.</p><p>Learning Outcome 3: Understand DevOps processes</p>');
-INSERT INTO `questions` VALUES (56, 1, 4, '3.1', '<p>Define what is meant by continuous integration</p>');
-INSERT INTO `questions` VALUES (57, 1, 4, '3.2', '<p>Define what is meant by continuous delivery</p>');
-INSERT INTO `questions` VALUES (58, 1, 4, '3.3', '<p>Define what is meant by continuous deployment</p>');
-INSERT INTO `questions` VALUES (59, 1, 4, '3.4', '<p>Identify the steps required for:</p><ul><li>Continuous integration</li><li>Continuous delivery</li><li>Continuous deployment</li></ul>');
-INSERT INTO `questions` VALUES (60, 1, 4, '3.5', '<p>Identify the differences between:</p><ul><li>Continuous integration</li><li>Continuous delivery</li><li>Continuous deployment</li></ul><p>Learning Outcome 4: Understand the importance of robust coding</p><p>For both criteria we will complete an API call exercise which will call to the internet to retrieve data. We will need a do, try, catch block to try and call to the internet and catch any errors. We will also need to use techniques such as guard to check the function will execute at an early point and if let to unwrap optionals.</p>');
-INSERT INTO `questions` VALUES (61, 1, 4, '4.1', '<p>Explain what is meant by exception handling (e.g. Swift - do, try, catch)</p>');
-INSERT INTO `questions` VALUES (62, 1, 4, '4.2', '<p>Explain what is meant by defensive programming (e.g. Swift – guard, if let)</p>');
-INSERT INTO `questions` VALUES (63, 1, 5, '1.1', '<p>Explain the importance of communication</p>');
-INSERT INTO `questions` VALUES (64, 1, 5, '1.2', '<p>Describe different methods of communication</p><p>Should include, but are not limited to:</p><ul><li>Interpersonal communication:</li><li>Verbal communication:</li><li>Nonverbal communication:</li><li>Written communication:</li><li>Presentations</li><li>Other:</li></ul>');
-INSERT INTO `questions` VALUES (65, 1, 5, '1.3', '<p>Identify when to use different methods of communication</p>');
-INSERT INTO `questions` VALUES (66, 1, 5, '1.4', '<p>Explain the importance of adapting communication for different audiences</p>');
-INSERT INTO `questions` VALUES (67, 1, 5, '1.5', '<p>Define what is meant by active listening</p>');
-INSERT INTO `questions` VALUES (68, 1, 5, '1.6', '<p>Describe methods of active listening</p>');
-INSERT INTO `questions` VALUES (69, 1, 5, '1.7', '<p>Describe ways of verbally presenting information and ideas clearly</p>');
-INSERT INTO `questions` VALUES (70, 1, 5, '1.8', '<p>Explain how release notes are used to communicate information to others</p><ul><li>Explain what release notes are</li><li>Research a real example of release notes, paste a screenshot and explain what they cover.</li><li>Create release notes for your 1st app.</li></ul><p>Learning Outcome 2: Understand the purpose of feedback in developing communication skills</p>');
-INSERT INTO `questions` VALUES (71, 1, 5, '2.1', '<p>Describe ways of seeking feedback on communications</p>');
-INSERT INTO `questions` VALUES (72, 1, 5, '2.2', '<p>Explain the purpose of using feedback to develop communication skills</p><p>Why is feedback important?</p><p>Give an example of how you have improved your communication skills following feedback.</p>');
-INSERT INTO `questions` VALUES (73, 1, 5, '2.3', '<p>Explain what is meant by productive feedback</p><p>After explaining, give an example of productive feedback you have given to someone else – why was it productive.</p><p>Learning Outcome 3: Understand the principles of project management</p>');
-INSERT INTO `questions` VALUES (74, 1, 5, '3.1', '<p>Define what is meant by project management</p>');
-INSERT INTO `questions` VALUES (75, 1, 5, '3.2', '<p>Define the role of a Project Manager</p>');
-INSERT INTO `questions` VALUES (76, 1, 5, '3.3', '<p>Identify the principles of Lean project management</p>');
-INSERT INTO `questions` VALUES (77, 1, 5, '3.4', '<p>Identify the principles of Waterfall project management</p>');
-INSERT INTO `questions` VALUES (78, 1, 5, '3.5', '<p>Explain what is meant by the triple constraint. Must include:</p><ul><li>Project scope</li><li>Time</li><li>Cost</li></ul><p>Learning Outcome 4: Understand Agile developments</p>');
-INSERT INTO `questions` VALUES (79, 1, 5, '4.1', '<p>Define what is meant by an Agile development</p>');
-INSERT INTO `questions` VALUES (80, 1, 5, '4.2', '<p>Identify the key characteristics of an Agile development</p>');
-INSERT INTO `questions` VALUES (81, 1, 5, '4.3', '<p>Identify the advantages and disadvantages of an Agile development</p>');
-INSERT INTO `questions` VALUES (82, 1, 5, '4.4', '<p>Describe what is meant by Scrum</p>');
-INSERT INTO `questions` VALUES (83, 1, 5, '4.5', '<p>Explain the role of a:</p><ul><li>Product Owner</li><li>Scrum Master</li><li>Scrum team</li></ul>');
-INSERT INTO `questions` VALUES (84, 1, 5, '4.6', '<p>Describe different Scrum events. Must include:</p><ul><li>Sprint,</li><li>Sprint Planning,</li><li>Daily Scrum,</li><li>Sprint Review</li><li>Sprint Retrospective.</li></ul>');
 
 -- ----------------------------
 -- Table structure for unit
@@ -200,6 +125,7 @@ CREATE TABLE `unit`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `courseid` int NOT NULL,
   `unitName` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '',
+  'unitCode' varchar(35) NOT NULL DEAFULT '',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 

@@ -5,7 +5,11 @@ if (!isset($receivedData['courseName']) || trim($receivedData['courseName']) ===
     send_response('Missing courseName', 400);
 }
 
-$query = 'INSERT INTO course (courseName) VALUES (?)';
+if (!isset($receivedData['courseCode']) || trim($receivedData['courseCode']) === '') {
+    send_response('Missing courseCode', 400);
+}
+
+$query = 'INSERT INTO course (courseName, courseCode) VALUES (?, ?)';
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {
@@ -14,7 +18,8 @@ if (!$stmt) {
 }
 
 $courseName = trim($receivedData['courseName']);
-$stmt->bind_param('s', $courseName);
+$courseCode = trim($receivedData['courseCode']);
+$stmt->bind_param('ss', $courseName, $courseCode);
 
 if (!$stmt->execute()) {
     log_info('Execute failed: ' . $stmt->error);

@@ -4,6 +4,10 @@ include 'setup.php';
 $activityId = isset($receivedData['activityId']) ? (int) $receivedData['activityId'] : null;
 $studentId = isset($receivedData['studentId']) ? (int) $receivedData['studentId'] : null;
 $marks = $receivedData['marks'] ?? null; // expected: { questionId: { outcome, comment } }
+$assessorComment = isset($receivedData['assessorComment']) ? trim((string) $receivedData['assessorComment']) : '';
+if (strlen($assessorComment) > 1000) {
+    $assessorComment = substr($assessorComment, 0, 1000);
+}
 $finalStatus = $receivedData['finalStatus'] ?? '';
 
 if ($activityId === null || $studentId === null || !is_array($marks)) {
@@ -48,12 +52,12 @@ foreach ($marks as $questionId => $payload) {
 $now = date('Y-m-d H:i:s');
 $dateComplete = $finalStatus === 'PASSED' ? $now : null;
 
-$activityStmt = $mysqli->prepare('UPDATE currentactivity SET status = ?, dateMarked = ?, dateComplete = ? WHERE id = ? AND studentId = ?');
+$activityStmt = $mysqli->prepare('UPDATE currentactivity SET status = ?, dateMarked = ?, dateComplete = ?, assessorComment = ? WHERE id = ? AND studentId = ?');
 if (!$activityStmt) {
     log_info('Prepare failed for currentactivity: ' . $mysqli->error);
     send_response('Prepare failed: ' . $mysqli->error, 500);
 }
-$activityStmt->bind_param('sssii', $finalStatus, $now, $dateComplete, $activityId, $studentId);
+$activityStmt->bind_param('ssssii', $finalStatus, $now, $dateComplete, $assessorComment, $activityId, $studentId);
 if (!$activityStmt->execute()) {
     log_info('currentactivity update failed: ' . $activityStmt->error);
     send_response('currentactivity update failed: ' . $activityStmt->error, 500);

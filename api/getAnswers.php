@@ -26,6 +26,7 @@ $references = [];
 $status = 'INPROGRESS';
 $outcomes = [];
 $comments = [];
+$assessorComment = '';
 
 while ($row = $result->fetch_assoc()) {
     $questionId = (int) $row['questionId'];
@@ -39,11 +40,23 @@ while ($row = $result->fetch_assoc()) {
     $comments[$questionId] = $row['comment'] ?? '';
 }
 
+$activityStmt = $mysqli->prepare('SELECT assessorComment FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
+if ($activityStmt) {
+    $activityStmt->bind_param('ii', $activityId, $studentId);
+    if ($activityStmt->execute()) {
+        $activityResult = $activityStmt->get_result();
+        if ($activityRow = $activityResult->fetch_assoc()) {
+            $assessorComment = $activityRow['assessorComment'] ?? '';
+        }
+    }
+}
+
 send_response(['data' => [
     'answers' => $answers,
     'references' => $references,
     'status' => $status,
     'outcomes' => $outcomes,
     'comments' => $comments,
+    'assessorComment' => $assessorComment,
 ]]);
 ?>
