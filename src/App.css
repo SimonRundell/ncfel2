@@ -153,6 +153,28 @@ Containers
   margin-top: 20px;
 }
 
+.assessment-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.assessment-tag {
+  display: inline-block;
+  background: #243447;
+  border: 1px solid #3a516b;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  color: #f0f0f0;
+  white-space: nowrap;
+}
+
+/* .assessment-tag :hover {
+  border-color: #646cff;
+} */
+
 /************************************************
 
 TWEAKS
@@ -279,8 +301,11 @@ ASSESSMENT REPORT
 
 *************************************************/
 
-.report-table {
-  font-size: 16px;
+.report-table, th, td {
+  font-size: 14px;
+  border:  0.5px solid #313131;
+  border-collapse: collapse;
+  padding: 10px;
 
 
 }

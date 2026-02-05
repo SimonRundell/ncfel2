@@ -4,6 +4,7 @@ import CourseManager from './CourseManager.jsx';
 import UnitManager from './UnitManager.jsx';
 import UserManager from './UserManager.jsx';
 import AssignUnit from './AssignUnit.jsx';
+import IndividualAssessment from './individualAssessment.jsx';
 import { normalizeListResponse } from './adminApiHelpers';
 
 function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
@@ -14,6 +15,7 @@ function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
     const [selectedClass, setSelectedClass] = useState(null);
     const [loadingRoster, setLoadingRoster] = useState(false);
     const [selectedUserForEdit, setSelectedUserForEdit] = useState(null);
+
 
     const notifySuccess = (msg) => setSendSuccessMessage(msg);
     const notifyError = (msg) => setSendErrorMessage(msg);
@@ -72,6 +74,7 @@ function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
             setLoadingRoster(false);
         }
     };
+
 
     const sections = [
         { key: 'roster', label: 'Class roster' },
@@ -143,15 +146,15 @@ function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
                                         return (student.userName || '').toLowerCase().includes(rosterSearch.trim().toLowerCase());
                                     })
                                     .map((student, index) => (
-                                        <li
-                                            className="student-row"
-                                            key={index}
-                                            onClick={() => {
+                                        <li className="student-row"
+                                            key={index}>
+                                            <span onClick={() => {
                                                 setSelectedUserForEdit(student);
                                                 setActiveSection('users');
-                                            }}
-                                        >
-                                            {student.userName}
+                                            }}>{student.userName}</span>
+                                            <span className="biggergap">
+                                                <IndividualAssessment config={config} onError={notifyError} id={student.id} />
+                                            </span>
                                         </li>
                                     ))}
                             </ul>
