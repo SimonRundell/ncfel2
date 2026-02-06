@@ -18,6 +18,7 @@ adminer.php
 api/.config.json
 public/.config.json
 .config.json
+*.live
 
 # Composer
 api/vendor/
