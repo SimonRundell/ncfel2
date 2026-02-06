@@ -1,0 +1,15 @@
+{
+    "servername": "mysql.exeter-itdd.com",
+    "port": 3306,
+    "username": "dh_65xfxi",
+    "password": "f3oHCjb7",
+    "dbname": "ncfel2",
+    "api": "https://ncfe.exeter-itdd.com/api",
+    "adminEmail": "simonrundell@exe-coll.ac.uk",
+    "smtpServer": "smtp.dreamhost.com",
+    "smtpPort": 587,
+    "smtpUser": "server@exeter-itdd.com",
+    "smtpPass": "f3oHCjb7",
+    "smtpFrom": "NCFE Level 2 Assessment Server",
+    "smtpFromEmail": "server@exeter-itdd.com"
+}
