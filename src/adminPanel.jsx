@@ -7,7 +7,7 @@ import AssignUnit from './AssignUnit.jsx';
 import IndividualAssessment from './individualAssessment.jsx';
 import { normalizeListResponse } from './adminApiHelpers';
 
-function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
+function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMessage }) {
     const [activeSection, setActiveSection] = useState('roster');
     const [classCodes, setClassCodes] = useState([]);
     const [students, setStudents] = useState([]);
@@ -177,7 +177,7 @@ function AdminPanel({ config, setSendSuccessMessage, setSendErrorMessage }) {
             )}
 
             {activeSection === 'assign' && (
-                <AssignUnit config={config} onSuccess={notifySuccess} onError={notifyError} />
+                <AssignUnit config={config} currentUser={currentUser} onSuccess={notifySuccess} onError={notifyError} />
             )}
 
             {activeSection === 'users' && (

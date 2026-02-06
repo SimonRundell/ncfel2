@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
 
-const AssignUnit = ({ config, onSuccess, onError }) => {
+const AssignUnit = ({ config, currentUser, onSuccess, onError }) => {
   const [classCodes, setClassCodes] = useState([]);
   const [courses, setCourses] = useState([]);
   const [units, setUnits] = useState([]);
@@ -75,6 +75,10 @@ const AssignUnit = ({ config, onSuccess, onError }) => {
       onError('Class, course, and unit are required');
       return;
     }
+    if (!currentUser?.id) {
+      onError('User not logged in');
+      return;
+    }
     setLoading(true);
     try {
       const response = await axios.post(
@@ -83,6 +87,7 @@ const AssignUnit = ({ config, onSuccess, onError }) => {
           classCode: selectedClass,
           courseId: Number(selectedCourse),
           unitId: Number(selectedUnit),
+          assessorId: currentUser.id,
         },
         { headers: { 'Content-Type': 'application/json' } }
       );

@@ -1,7 +1,7 @@
 <?php
 include 'setup.php';
 
-$required = ['studentId', 'courseId', 'unitId'];
+$required = ['studentId', 'courseId', 'unitId', 'assessorId'];
 foreach ($required as $field) {
     if (!isset($receivedData[$field])) {
         send_response('Missing ' . $field, 400);
@@ -15,7 +15,7 @@ $dateMarked = $receivedData['dateMarked'] ?? null;
 $dateResubmitted = $receivedData['dateResubmitted'] ?? null;
 $dateComplete = $receivedData['dateComplete'] ?? null;
 
-$query = 'INSERT INTO currentactivity (studentId, courseId, unitId, status, dateSet, dateSubmitted, dateMarked, dateResubmitted, dateComplete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+$query = 'INSERT INTO currentactivity (studentId, courseId, unitId, assessorId, status, dateSet, dateSubmitted, dateMarked, dateResubmitted, dateComplete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {
@@ -26,12 +26,14 @@ if (!$stmt) {
 $studentId = (int) $receivedData['studentId'];
 $courseId = (int) $receivedData['courseId'];
 $unitId = (int) $receivedData['unitId'];
+$assessorId = (int) $receivedData['assessorId'];
 
 $stmt->bind_param(
-    'iiissssss',
+    'iiiissssss',
     $studentId,
     $courseId,
     $unitId,
+    $assessorId,
     $status,
     $dateSet,
     $dateSubmitted,

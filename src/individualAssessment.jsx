@@ -68,12 +68,12 @@ useEffect(() => {
             setQuestions(Array.isArray(questionsList) ? questionsList : [])
             setAnswers(answersData.outcomes || {})
             
-            // Fetch assessor name if markedBy is available
-            if (ass.markedBy) {
+            // Fetch assessor name if assessorId is available
+            if (ass.assessorId) {
                 try {
                     const userResponse = await axios.post(
                         `${config.api}/getUsers.php`,
-                        { id: ass.markedBy },
+                        { id: ass.assessorId },
                         { headers: { 'Content-Type': 'application/json' } }
                     )
                     const users = normalizeListResponse(userResponse.data)

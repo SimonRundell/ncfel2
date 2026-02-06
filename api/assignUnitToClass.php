@@ -7,6 +7,7 @@ log_info('assignUnitToClass payload: ' . json_encode($payload));
 $classCode = trim((string)($payload['classCode'] ?? ''));
 $courseId = $payload['courseId'] ?? null;
 $unitId = $payload['unitId'] ?? null;
+$assessorId = $payload['assessorId'] ?? null;
 
 $missing = [];
 if ($classCode === '') {
@@ -18,6 +19,9 @@ if ($courseId === null || $courseId === '') {
 if ($unitId === null || $unitId === '') {
     $missing[] = 'unitId';
 }
+if ($assessorId === null || $assessorId === '') {
+    $missing[] = 'assessorId';
+}
 
 if (!empty($missing)) {
     send_response('Missing fields: ' . implode(', ', $missing), 400);
@@ -25,6 +29,7 @@ if (!empty($missing)) {
 
 $courseId = (int)$courseId;
 $unitId = (int)$unitId;
+$assessorId = (int)$assessorId;
 $status = 'INPROGRESS';
 $dateNow = date('Y-m-d H:i:s');
 
@@ -47,7 +52,7 @@ if (empty($students)) {
 }
 
 $checkStmt = $mysqli->prepare('SELECT id FROM currentactivity WHERE studentId = ? AND courseId = ? AND unitId = ? AND status = ? LIMIT 1');
-$insertStmt = $mysqli->prepare('INSERT INTO currentactivity (studentId, courseId, unitId, status, dateSet) VALUES (?, ?, ?, ?, ?)');
+$insertStmt = $mysqli->prepare('INSERT INTO currentactivity (studentId, courseId, unitId, assessorId, status, dateSet) VALUES (?, ?, ?, ?, ?, ?)');
 
 if (!$checkStmt || !$insertStmt) {
     log_info('Prepare failed: ' . $mysqli->error);
@@ -72,7 +77,7 @@ try {
             continue;
         }
 
-        $insertStmt->bind_param('iiiss', $sid, $courseId, $unitId, $status, $dateNow);
+        $insertStmt->bind_param('iiiiss', $sid, $courseId, $unitId, $assessorId, $status, $dateNow);
         if ($insertStmt->execute()) {
             $inserted++;
         } else {
