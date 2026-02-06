@@ -49,19 +49,26 @@ while ($admin = $adminResult->fetch_assoc()) {
     $adminEmails[] = $admin['email'];
 }
 
-if (empty($adminEmails)) {
+// Merge DB admins with configured notification address
+$notificationEmails = $adminEmails;
+if (!empty($config['adminEmail'])) {
+    $notificationEmails[] = $config['adminEmail'];
+}
+$notificationEmails = array_values(array_unique(array_filter($notificationEmails)));
+
+if (empty($notificationEmails)) {
     log_info('No admin users found for password reset notification');
     send_response('Password reset request received', 200);
 }
 
-// Send email to all admins/teachers
+// Send email to all admins/teachers and configured recipient
 try {
     $emailHelper = new EmailHelper();
     $logoUrl = $config['api'] . '/images/exeter_bw.png';
     $timestamp = date('Y-m-d H:i:s');
     
     $emailHelper->sendTemplateEmail(
-        $adminEmails,
+        $notificationEmails,
         'Password Reset Request - ' . $user['userName'],
         'password-reset-request.html',
         [
