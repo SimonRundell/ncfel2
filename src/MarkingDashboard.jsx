@@ -31,6 +31,19 @@ const AnswerPreview = ({ content }) => {
   return <EditorContent editor={editor} />;
 };
 
+/**
+ * Marking dashboard for teachers/admins to review and grade submissions.
+ * Loads courses/units/students/activities, filters submissions, renders answers, and saves outcomes/comments.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  currentUser: { status: number, classCode?: string } | null,
+ *  onError?: (msg: string) => void,
+ *  onSuccess?: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
   const [courses, setCourses] = useState([]);
   const [units, setUnits] = useState([]);

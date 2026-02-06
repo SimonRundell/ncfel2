@@ -98,7 +98,7 @@ Request password reset (sends email to teachers/admins).
 
 **Notes:**
 - Always returns 200 even if user not found (security)
-- Sends email to all users with status 2 or 3
+- Sends email to all users with status 2 or 3 and the configured `adminEmail`
 - Manual process requiring in-person verification
 
 ## User Management

@@ -3,6 +3,19 @@ import axios from 'axios'
 import { normalizeListResponse } from './adminApiHelpers'
 import {formatDateTime} from './dateUtils'
 
+/**
+ * Modal view for a single student's assessments, including questions/answers and printable feedback.
+ * Fetches assessments, questions, answers, and assessor info; supports print and status display.
+ *
+ * @component
+ * @param {{
+ *  id: number,
+ *  config: { api: string },
+ *  notifyError: (msg: string) => void,
+ *  studentName: string
+ * }} props
+ * @returns {JSX.Element}
+ */
 function IndividualAssessment({id, config, notifyError, studentName}) {
     const [assessment, setAssessment] = useState([])
     const [selectedAssessment, setSelectedAssessment] = useState(null)

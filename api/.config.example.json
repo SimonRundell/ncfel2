@@ -5,6 +5,7 @@
     "password": "your_db_password",
     "dbname": "ncfel2",
     "api": "http://localhost",
+    "adminEmail": "admin@example.com",
     "smtpServer": "smtp.example.com",
     "smtpPort": 587,
     "smtpUser": "smtp_user",

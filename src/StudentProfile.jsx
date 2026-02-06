@@ -4,6 +4,20 @@ import axios from 'axios';
 
 const maxAvatarBytes = 10 * 1024 * 1024; // 10MB
 
+/**
+ * Modal for students to update email, password, and avatar.
+ * Handles avatar upload/validation and MD5 hashing for password changes.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string },
+ *  currentUser: { id: number, email: string, avatar?: string } | null,
+ *  onClose: () => void,
+ *  onUpdated?: (user: object) => void,
+ *  onError: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 const StudentProfile = ({ config, currentUser, onClose, onUpdated, onError }) => {
   const [email, setEmail] = useState(currentUser?.email || '');
   const [password, setPassword] = useState('');

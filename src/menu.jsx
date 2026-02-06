@@ -1,5 +1,19 @@
 import './App.css';
 
+/**
+ * Top navigation menu for switching views, opening profile, and logging out.
+ * Shows role-based buttons for teachers/admins.
+ *
+ * @component
+ * @param {{
+ *  currentUser: { status: number, avatar?: string, userName?: string } | null,
+ *  onLogout: () => void,
+ *  onProfile: () => void,
+ *  activeView: string,
+ *  onViewChange: (view: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange }) {
   const isAdmin = currentUser && currentUser.status === 3;
   const isTeacher = currentUser && currentUser.status >= 2;

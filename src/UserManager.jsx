@@ -14,6 +14,20 @@ const emptyForm = {
   avatar: '',
 };
 
+/**
+ * Admin user management (create/update/delete, search, bulk upload, avatar handling).
+ * Supports CSV bulk import, MD5 password hashing, class code filtering, and user editing.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  onSuccess: (msg: string) => void,
+ *  onError: (msg: string) => void,
+ *  selectedUser?: object | null,
+ *  clearSelectedUser?: () => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUser }) => {
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(emptyForm);

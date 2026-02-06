@@ -45,7 +45,7 @@ cp .config.example.json .config.json
 # Backend config
 cd api
 cp .config.example.json .config.json
-# Edit with database and SMTP credentials
+# Edit with database, SMTP credentials, and adminEmail (extra notification target)
 ```
 
 **Database:**
@@ -525,6 +525,11 @@ $this->mailer->SMTPDebug = 2;
 # Check logs
 tail -f api/server.log
 ```
+
+### Password reset notifications
+- Recipients: all users with status 2 or 3 plus `adminEmail` from `api/.config.json`.
+- Template: edit `api/templates/password-reset-request.html` for copy/branding.
+- Logo URL comes from `api` base in config (`/images/exeter_bw.png` by default).
 
 ### "CORS error"
 **Problem**: Frontend can't call API

@@ -5,8 +5,16 @@ import { formatDateTime } from './dateUtils';
 
 /**
  * Assessment report view for teachers/admins.
- * Provides class/status filters, printable table layout, and collapsed duplicate student names.
- * @param {{config: object, currentUser: object, onError?: function}} props
+ * Fetches students, activities, courses, and units, then renders a filterable/printable table.
+ * Collapses duplicate student names, supports class/status filters, and pre-filters for teacher class.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  currentUser: { status: number, classCode?: string } | null,
+ *  onError?: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
  */
 const AssessmentReport = ({ config, currentUser, onError }) => {
   const [students, setStudents] = useState([]);

@@ -2,6 +2,17 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
 
+/**
+ * Admin CRUD interface for units with optional course filtering.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  onSuccess: (msg: string) => void,
+ *  onError: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 const UnitManager = ({ config, onSuccess, onError }) => {
   const [units, setUnits] = useState([]);
   const [courses, setCourses] = useState([]);

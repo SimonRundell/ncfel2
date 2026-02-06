@@ -28,6 +28,18 @@ const emptyForm = {
   dateComplete: '',
 };
 
+/**
+ * Admin interface for managing current activities (assessments) including filters and CRUD.
+ * Supports creation/update with status and date fields and filtering by student/course/status.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  onSuccess: (msg: string) => void,
+ *  onError: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 const CurrentActivityManager = ({ config, onSuccess, onError }) => {
   const [activities, setActivities] = useState([]);
   const [form, setForm] = useState(emptyForm);

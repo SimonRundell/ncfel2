@@ -7,6 +7,22 @@ import { normalizeListResponse } from './adminApiHelpers';
 
 const BLOCKED_MESSAGE_TIMEOUT = 1200;
 
+/**
+ * Student answer workspace for a specific activity.
+ * Loads questions, manages rich-text editors, persists drafts locally, submits answers, and tracks outcomes/comments.
+ * Handles draft autosave, status transitions, and reference links per question.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  activity: { id: number, unitId: number, courseId: number, status?: string } | null,
+ *  onClose: () => void,
+ *  onSubmitted: () => void,
+ *  onDraftSaved: () => void,
+ *  onError?: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, onError }) => {
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState([]);

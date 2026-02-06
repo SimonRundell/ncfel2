@@ -1,4 +1,11 @@
 <?php
+/**
+ * Password reset request endpoint.
+ *
+ * Accepts an email address, looks up the user, and notifies teachers/admins
+ * plus the configured adminEmail with a templated email for manual reset.
+ * Does not disclose user existence for security.
+ */
 include 'setup.php';
 require_once __DIR__ . '/emailHelper.php';
 

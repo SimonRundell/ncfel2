@@ -2,6 +2,19 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
 
+/**
+ * Admin tool to assign a unit to an entire class for assessment.
+ * Loads class codes, courses, and units, then posts a bulk assignment.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  currentUser: { id: number } | null,
+ *  onSuccess: (msg: string) => void,
+ *  onError: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 const AssignUnit = ({ config, currentUser, onSuccess, onError }) => {
   const [classCodes, setClassCodes] = useState([]);
   const [courses, setCourses] = useState([]);

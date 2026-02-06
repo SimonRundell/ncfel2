@@ -1,3 +1,12 @@
+/**
+ * Normalize API list responses that may be nested in different shapes.
+ *
+ * Accepts payloads like `{ message: [...] }`, `{ message: '{"data": [...]}' }`,
+ * or raw arrays and always returns an array. Returns empty array on failure.
+ *
+ * @param {unknown} payload API response payload
+ * @returns {Array} Normalized array of rows (or empty array)
+ */
 export const normalizeListResponse = (payload) => {
   if (Array.isArray(payload)) {
     return payload;
@@ -26,6 +35,14 @@ export const normalizeListResponse = (payload) => {
   return [];
 };
 
+/**
+ * Extract a user-facing message from a mixed API response shape.
+ * Falls back to status_code or a supplied default string.
+ *
+ * @param {unknown} payload API response payload
+ * @param {string} [fallback='Done'] Default message when none found
+ * @returns {string} Message text suitable for UI display
+ */
 export const getMessageFromResponse = (payload, fallback = 'Done') => {
   if (payload && typeof payload === 'object') {
     if (payload.message) {

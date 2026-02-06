@@ -7,6 +7,18 @@ import AssignUnit from './AssignUnit.jsx';
 import IndividualAssessment from './individualAssessment.jsx';
 import { normalizeListResponse } from './adminApiHelpers';
 
+/**
+ * Administrative console for managing courses, units, users, rosters, and assignments.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  currentUser: object,
+ *  setSendSuccessMessage: (msg: string) => void,
+ *  setSendErrorMessage: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMessage }) {
     const [activeSection, setActiveSection] = useState('roster');
     const [classCodes, setClassCodes] = useState([]);

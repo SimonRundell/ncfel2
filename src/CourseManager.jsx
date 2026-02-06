@@ -2,6 +2,17 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
 
+/**
+ * Admin CRUD interface for courses (create, update, delete, list).
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  onSuccess: (msg: string) => void,
+ *  onError: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 const CourseManager = ({ config, onSuccess, onError }) => {
   const [courses, setCourses] = useState([]);
   const [courseName, setCourseName] = useState('');

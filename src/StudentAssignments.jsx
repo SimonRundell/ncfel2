@@ -3,6 +3,18 @@ import axios from 'axios';
 import { normalizeListResponse } from './adminApiHelpers';
 import StudentAnswer from './StudentAnswer.jsx';
 
+/**
+ * Student dashboard listing current activities and launching the answer workspace.
+ * Filters out discontinued activities and reloads after submit/save.
+ *
+ * @component
+ * @param {{
+ *  config: { api: string } | null,
+ *  currentUser: { id: number } | null,
+ *  onError?: (msg: string) => void
+ * }} props
+ * @returns {JSX.Element}
+ */
 const StudentAssignments = ({ config, currentUser, onError }) => {
   const [activities, setActivities] = useState([]);
   const [courses, setCourses] = useState([]);

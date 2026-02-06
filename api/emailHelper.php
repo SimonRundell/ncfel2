@@ -91,6 +91,12 @@ class EmailHelper {
 
     /**
      * Send an email using an HTML template from /api/templates.
+     *
+     * @param string|array $to Recipient email or array of emails.
+     * @param string $subject Subject line for the email.
+     * @param string $templateFile Template filename located in /api/templates.
+     * @param array $variables Key/value replacements to inject into the template.
+     * @return bool True on success, false on failure.
      */
     public function sendTemplateEmail($to, $subject, $templateFile, $variables = []) {
         $templatePath = __DIR__ . '/templates/' . $templateFile;
