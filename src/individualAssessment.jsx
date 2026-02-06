@@ -1,6 +1,7 @@
 import {useState, useEffect} from 'react'
 import axios from 'axios'
 import { normalizeListResponse } from './adminApiHelpers'
+import {formatDateTime} from './dateUtils'
 
 function IndividualAssessment({id, config, notifyError, studentName}) {
     const [assessment, setAssessment] = useState([])
@@ -211,7 +212,9 @@ useEffect(() => {
         return `
             <div class="header">
                 <img src="/images/ncfe_bw.png" alt="NCFE" style="height: 60px;" />
-                <div class="exeter">exeter college</div>
+                <div class="exeter">exeter college
+                <img src="/images/exeter_swoosh.png" alt="Exeter College" style="height: 60px;" />
+                </div>
             </div>
             
             <h2>Assessor Feedback to Learner</h2>
@@ -228,13 +231,13 @@ useEffect(() => {
                         <td colspan="4" style="font-weight: bold;">Qualification No & Name</td>
                     </tr>
                     <tr>
-                        <td colspan="4">NCFE Level 2 ${selectedAssessment?.courseName || ''}</td>
+                        <td colspan="4">NCFE Level 2 ${selectedAssessment?.courseName || ''} (${selectedAssessment?.courseCode || ''})</td>
                     </tr>
                     <tr>
                         <td colspan="4" style="font-weight: bold;">Unit / piece of evidence</td>
                     </tr>
                     <tr>
-                        <td colspan="4">${selectedAssessment?.unitName || ''}</td>
+                        <td colspan="4">${selectedAssessment?.unitName || ''} (${selectedAssessment?.unitCode || ''})</td>
                     </tr>
                     <tr>
                         <td colspan="4"><strong>Please list the units, learning outcomes and assessment criteria which were achieved</strong></td>
@@ -298,7 +301,7 @@ useEffect(() => {
                         <td style="font-weight: bold;">Assessor Signature</td>
                         <td class="signature">${assessorName}</td>
                         <td style="font-weight: bold;">Date</td>
-                        <td>${selectedAssessment?.dateMarked ? new Date(selectedAssessment.dateMarked).toLocaleDateString() : ''}</td>
+                        <td>${selectedAssessment?.dateMarked ? formatDateTime(selectedAssessment.dateMarked) : ''}</td>
                     </tr>
                     <tr>
                         <td style="font-weight: bold;">IV Name</td>
@@ -326,7 +329,7 @@ useEffect(() => {
                     onClick={() => handleAssessmentClick(ass)}
                     style={{ cursor: 'pointer' }}
                 >
-                    {ass.courseName} | {ass.unitName} <span className="red">{ass.status}</span>
+                    {ass.unitCode} | {ass.unitName} <span className="red">{ass.status}</span>
                 </span>
             ))}
         </div>
@@ -338,7 +341,7 @@ useEffect(() => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'flex-start' }}>
                             <img src="/images/ncfe_bw.png" alt="NCFE" style={{ height: '60px' }} />
                             <div style={{ fontSize: '1.2rem', color: '#0066cc', fontWeight: 'bold' }}>
-                                exeter college
+                                exeter college <img src="/images/exeter_swoosh.png" alt="Exeter College" style={{ height: '60px' }} />
                             </div>
                         </div>
                     </div>
@@ -365,7 +368,7 @@ useEffect(() => {
                                         </tr>
                                         <tr>
                                             <td colSpan="4" style={{ border: '1px solid black', padding: '0.5rem' }}>
-                                                NCFE Level 2 {selectedAssessment?.courseName}
+                                                NCFE Level 2 {selectedAssessment?.courseName} ({selectedAssessment?.courseCode})
                                             </td>
                                         </tr>
                                         <tr>
@@ -375,7 +378,7 @@ useEffect(() => {
                                         </tr>
                                         <tr>
                                             <td colSpan="4" style={{ border: '1px solid black', padding: '0.5rem' }}>
-                                                {selectedAssessment?.unitName}
+                                                {selectedAssessment?.unitName} ({selectedAssessment.unitCode})
                                             </td>
                                         </tr>
                                         <tr>
@@ -476,7 +479,7 @@ useEffect(() => {
                                             </td>
                                             <td style={{ border: '1px solid black', padding: '0.5rem', fontWeight: 'bold' }}>Date</td>
                                             <td style={{ border: '1px solid black', padding: '0.5rem' }}>
-                                                {selectedAssessment?.dateMarked ? new Date(selectedAssessment.dateMarked).toLocaleDateString() : ''}
+                                                {selectedAssessment?.dateMarked ? formatDateTime(new Date(selectedAssessment.dateMarked)) : ''}
                                             </td>
                                         </tr>
                                         <tr>

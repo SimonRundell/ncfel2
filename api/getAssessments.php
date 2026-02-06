@@ -1,7 +1,7 @@
 <?php
 include 'setup.php';
 
-$query = "SELECT currentactivity.*, course.courseName, unit.unitName 
+$query = "SELECT currentactivity.*, course.courseName, course.courseCode, unit.unitName, unit.unitCode
           FROM currentactivity
           INNER JOIN course ON currentactivity.courseId = course.id
           INNER JOIN unit ON currentactivity.unitId = unit.id
