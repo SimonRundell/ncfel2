@@ -87,17 +87,27 @@ function App() {
    * @type {[boolean, Function]} Toggle profile modal visibility
    */
   const [showProfile, setShowProfile] = useState(false);
+  const mustChangePassword = Boolean(currentUser?.changeLogin);
 
   useEffect(() => {
     if (!currentUser) return;
-    if (currentUser.status === 3) {
+    if (mustChangePassword) {
+      setShowProfile(true);
+    } else if (currentUser.status === 3) {
       setActiveView('admin');
     } else if (currentUser.status === 2) {
       setActiveView('marking');
     } else {
       setActiveView('assignments');
     }
-  }, [currentUser]);
+  }, [currentUser, mustChangePassword]);
+
+  // If the flag clears (after password change), allow the profile modal to close
+  useEffect(() => {
+    if (!mustChangePassword && showProfile) {
+      setShowProfile(false);
+    }
+  }, [mustChangePassword, showProfile]);
 
   /**
    * Configuration Loading Effect
@@ -165,9 +175,10 @@ useEffect(() => {
             <Menu
                currentUser={currentUser}
                activeView={activeView}
-               onViewChange={setActiveView}
-               onProfile={() => setShowProfile(true)}
+              onViewChange={(view) => { if (!mustChangePassword) setActiveView(view); }}
+              onProfile={() => setShowProfile(true)}
                onLogout={() => setCurrentUser(null)}
+              viewLocked={mustChangePassword}
             />
             {activeView === 'admin' && currentUser.status === 3 && (
               <AdminPanel
@@ -199,13 +210,14 @@ useEffect(() => {
                 onError={(msg) => setSendErrorMessage(msg)}
               />
             )}
-            {showProfile && (
+            {(mustChangePassword || showProfile) && (
               <StudentProfile
                 config={config}
                 currentUser={currentUser}
-                onClose={() => setShowProfile(false)}
+                onClose={mustChangePassword ? () => {} : () => setShowProfile(false)}
                 onUpdated={(user) => setCurrentUser(user)}
                 onError={(msg) => setSendErrorMessage(msg)}
+                forceChangeLogin={mustChangePassword}
               />
             )}
           </>

@@ -293,6 +293,7 @@ CREATE TABLE `user`  (
   `classCode` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `status` int NOT NULL DEFAULT 0 COMMENT '0=user; 2=teacher; 3=admin',
   `avatar` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT 'Base64Encoded Avatar',
+  'changeLogin' tinyint(1) NOT NULL DEFAULT 0 COMMENT '0=No change; 1=Change required on next login',   
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 

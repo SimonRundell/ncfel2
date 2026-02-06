@@ -31,6 +31,8 @@ if ($passwordHash !== null) {
     $fields[] = 'passwordHash = ?';
     $params[] = $passwordHash;
     $types .= 's';
+    // Clearing the forced-change flag once the user sets a new password
+    $fields[] = 'changeLogin = 0';
 }
 
 if ($avatar !== null) {

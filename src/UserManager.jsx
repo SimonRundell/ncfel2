@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import CryptoJS from 'crypto-js';
 import axios from 'axios';
+import { Spin } from 'antd';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
 
 const emptyForm = {
@@ -42,6 +43,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
   const [bulkCsvName, setBulkCsvName] = useState('');
   const [bulkCsvContent, setBulkCsvContent] = useState('');
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const needsClassCode = form.status === 0;
   const fileInputRef = useRef(null);
   const bulkFileInputRef = useRef(null);
@@ -192,6 +194,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
     }
 
     setBulkLoading(true);
+    let uploadCompleted = false;
     try {
       const response = await axios.post(
         `${config.api}/bulkUploadUsers.php`,
@@ -202,15 +205,19 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
         },
         { headers: { 'Content-Type': 'application/json' } }
       );
-      onSuccess(getMessageFromResponse(response.data, 'Bulk upload complete'));
-      setShowBulkModal(false);
-      resetBulkState();
+      const successMessage = getMessageFromResponse(response.data, 'Bulk upload has been sent');
+      onSuccess(successMessage);
+      uploadCompleted = true;
       loadUsers();
     } catch (error) {
       console.error('Error bulk uploading users', error);
       onError('Error bulk uploading users');
     } finally {
       setBulkLoading(false);
+      if (uploadCompleted) {
+        setShowBulkModal(false);
+        resetBulkState();
+      }
     }
   };
 
@@ -286,24 +293,33 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
     });
   };
 
-  const handleDelete = async (user) => {
-    if (!window.confirm(`Delete user "${user.userName}"?`)) return;
+  const handleDeleteRequest = (user) => {
+    setUserToDelete(user);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
     setLoading(true);
     try {
       await axios.post(
         `${config.api}/deleteUser.php`,
-        { id: user.id },
+        { id: userToDelete.id },
         { headers: { 'Content-Type': 'application/json' } }
       );
       onSuccess('User deleted');
-      if (form.id === user.id) resetForm();
+      if (form.id === userToDelete.id) resetForm();
       loadUsers();
     } catch (error) {
       console.error('Error deleting user', error);
       onError('Error deleting user');
     } finally {
       setLoading(false);
+      setUserToDelete(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setUserToDelete(null);
   };
 
   const filteredUsers = users.filter((user) => {
@@ -330,6 +346,13 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
 
   return (
     <div className="admin-section">
+      {bulkLoading && (
+        <div className="central-overlay-spinner">
+          <div className="spinner-text">
+            <Spin size="large" /> Uploading students... please wait
+          </div>
+        </div>
+      )}
       <div className="admin-section-header">
         <div>
           <div className="admin-section-title">Users</div>
@@ -483,7 +506,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
               <button type="button" onClick={() => handleEdit(user)} disabled={loading}>
                 Edit
               </button>
-              <button type="button" onClick={() => handleDelete(user)} disabled={loading}>
+              <button type="button" onClick={() => handleDeleteRequest(user)} disabled={loading}>
                 Delete
               </button>
             </div>
@@ -579,6 +602,33 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {userToDelete && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Delete user</div>
+                <div className="modal-subtitle">This action cannot be undone.</div>
+              </div>
+              <button type="button" onClick={handleDeleteCancel} disabled={loading}>
+                Close
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete {userToDelete.userName}?</p>
+            </div>
+            <div className="modal-actions">
+              <button type="button" onClick={handleDeleteCancel} disabled={loading}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleDeleteConfirm} disabled={loading}>
+                Delete user
+              </button>
+            </div>
           </div>
         </div>
       )}

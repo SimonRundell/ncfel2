@@ -19,6 +19,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
   const [courseCode, setCourseCode] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState(null);
 
   const loadCourses = async () => {
     if (!config?.api) {
@@ -91,17 +92,21 @@ const CourseManager = ({ config, onSuccess, onError }) => {
     setCourseCode(course.courseCode || '');
   };
 
-  const handleDelete = async (course) => {
-    if (!window.confirm(`Delete course "${course.courseName}"?`)) return;
+  const handleDeleteRequest = (course) => {
+    setCourseToDelete(course);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!courseToDelete) return;
     setLoading(true);
     try {
       await axios.post(
         `${config.api}/deleteCourse.php`,
-        { id: course.id },
+        { id: courseToDelete.id },
         { headers: { 'Content-Type': 'application/json' } }
       );
       onSuccess('Course deleted');
-      if (editingId === course.id) {
+      if (editingId === courseToDelete.id) {
         resetForm();
       }
       loadCourses();
@@ -110,7 +115,12 @@ const CourseManager = ({ config, onSuccess, onError }) => {
       onError('Error deleting course');
     } finally {
       setLoading(false);
+      setCourseToDelete(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setCourseToDelete(null);
   };
 
   return (
@@ -167,7 +177,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
               <button type="button" onClick={() => handleEdit(course)} disabled={loading}>
                 Edit
               </button>
-              <button type="button" onClick={() => handleDelete(course)} disabled={loading}>
+              <button type="button" onClick={() => handleDeleteRequest(course)} disabled={loading}>
                 Delete
               </button>
             </div>
@@ -175,6 +185,33 @@ const CourseManager = ({ config, onSuccess, onError }) => {
         ))}
         {courses.length === 0 && <div className="admin-empty">No courses yet.</div>}
       </div>
+
+      {courseToDelete && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Delete course</div>
+                <div className="modal-subtitle">This action cannot be undone.</div>
+              </div>
+              <button type="button" onClick={handleDeleteCancel} disabled={loading}>
+                Close
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete {courseToDelete.courseName}?</p>
+            </div>
+            <div className="modal-actions">
+              <button type="button" onClick={handleDeleteCancel} disabled={loading}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleDeleteConfirm} disabled={loading}>
+                Delete course
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

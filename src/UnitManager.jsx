@@ -19,6 +19,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
   const [loading, setLoading] = useState(false);
   const [filterCourseId, setFilterCourseId] = useState('');
   const [form, setForm] = useState({ id: null, courseid: '', unitName: '', unitCode: '' });
+  const [unitToDelete, setUnitToDelete] = useState(null);
 
   const loadCourses = async () => {
     if (!config?.api) return;
@@ -112,24 +113,33 @@ const UnitManager = ({ config, onSuccess, onError }) => {
     setForm({ id: unit.id, courseid: unit.courseid, unitName: unit.unitName || '', unitCode: unit.unitCode || '' });
   };
 
-  const handleDelete = async (unit) => {
-    if (!window.confirm(`Delete unit "${unit.unitName}"?`)) return;
+  const handleDeleteRequest = (unit) => {
+    setUnitToDelete(unit);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!unitToDelete) return;
     setLoading(true);
     try {
       await axios.post(
         `${config.api}/deleteUnit.php`,
-        { id: unit.id },
+        { id: unitToDelete.id },
         { headers: { 'Content-Type': 'application/json' } }
       );
       onSuccess('Unit deleted');
-      if (form.id === unit.id) resetForm();
+      if (form.id === unitToDelete.id) resetForm();
       loadUnits();
     } catch (error) {
       console.error('Error deleting unit', error);
       onError('Error deleting unit');
     } finally {
       setLoading(false);
+      setUnitToDelete(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setUnitToDelete(null);
   };
 
   return (
@@ -217,7 +227,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
               <button type="button" onClick={() => handleEdit(unit)} disabled={loading}>
                 Edit
               </button>
-              <button type="button" onClick={() => handleDelete(unit)} disabled={loading}>
+              <button type="button" onClick={() => handleDeleteRequest(unit)} disabled={loading}>
                 Delete
               </button>
             </div>
@@ -225,6 +235,33 @@ const UnitManager = ({ config, onSuccess, onError }) => {
         ))}
         {units.length === 0 && <div className="admin-empty">No units yet.</div>}
       </div>
+
+      {unitToDelete && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Delete unit</div>
+                <div className="modal-subtitle">This action cannot be undone.</div>
+              </div>
+              <button type="button" onClick={handleDeleteCancel} disabled={loading}>
+                Close
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete {unitToDelete.unitName}?</p>
+            </div>
+            <div className="modal-actions">
+              <button type="button" onClick={handleDeleteCancel} disabled={loading}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleDeleteConfirm} disabled={loading}>
+                Delete unit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

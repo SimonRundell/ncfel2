@@ -90,8 +90,86 @@ const AssessmentReport = ({ config, currentUser, onError }) => {
     return Array.from(statuses).sort();
   }, [activities]);
 
+  const buildPrintHtml = () => {
+    const printedAt = new Date();
+    const classLabel = selectedClass || 'All classes';
+    const statusLabel = selectedStatus || 'All statuses';
+    const rowsHtml = displayRows
+      .map((row, idx) => `
+        <tr key="${row.studentId}-${idx}">
+          <td>${row.displayName || ''}</td>
+          <td>${row.classCode || '—'}</td>
+          <td>${row.courseLabel || ''}</td>
+          <td>${row.unitLabel || ''}</td>
+          <td>${row.status || ''}</td>
+          <td>${formatDateTime(row.dateSet) || ''}</td>
+          <td>${formatDateTime(row.dateSubmitted) || ''}</td>
+          <td>${formatDateTime(row.dateResubmitted) || ''}</td>
+          <td>${formatDateTime(row.dateMarked) || ''}</td>
+          <td>${formatDateTime(row.dateComplete) || ''}</td>
+        </tr>
+      `)
+      .join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>Assessment Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+            h1 { margin: 0 0 8px; }
+            .meta { margin: 0 0 16px; font-size: 0.95rem; color: #333; }
+            .meta strong { color: #000; }
+            table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+            th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+            th { background: #f4f4f4; }
+            .controls { text-align: right; margin: 12px 0; }
+            .controls button { margin-left: 8px; padding: 6px 12px; }
+            @media print { .controls { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="controls">
+            <button onclick="window.print()">Print</button>
+            <button onclick="window.close()">Close</button>
+          </div>
+          <h1>Assessment Report</h1>
+          <p class="meta">
+            <strong>Class:</strong> ${classLabel} &nbsp; | &nbsp;
+            <strong>Status:</strong> ${statusLabel} &nbsp; | &nbsp;
+            <strong>Generated:</strong> ${printedAt.toLocaleString()}
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Course</th>
+                <th>Unit</th>
+                <th>Status</th>
+                <th>Date set</th>
+                <th>Submitted</th>
+                <th>Resubmitted</th>
+                <th>Marked</th>
+                <th>Complete</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml || '<tr><td colspan="10">No data</td></tr>'}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+  };
+
   const handlePrint = () => {
-    window.print();
+    const popup = window.open('', '_blank');
+    if (!popup) return;
+    popup.document.write(buildPrintHtml());
+    popup.document.close();
   };
 
   useEffect(() => {

@@ -18,7 +18,7 @@ const maxAvatarBytes = 10 * 1024 * 1024; // 10MB
  * }} props
  * @returns {JSX.Element}
  */
-const StudentProfile = ({ config, currentUser, onClose, onUpdated, onError }) => {
+const StudentProfile = ({ config, currentUser, onClose, onUpdated, onError, forceChangeLogin = false }) => {
   const [email, setEmail] = useState(currentUser?.email || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -74,6 +74,11 @@ const StudentProfile = ({ config, currentUser, onClose, onUpdated, onError }) =>
       return;
     }
 
+    if (forceChangeLogin && !password.trim()) {
+      onError('Please set a new password to continue');
+      return;
+    }
+
     const payload = {
       id: currentUser.id,
       email: email.trim(),
@@ -108,9 +113,13 @@ const StudentProfile = ({ config, currentUser, onClose, onUpdated, onError }) =>
         <div className="modal-header">
           <div>
             <div className="modal-title">Your profile</div>
-            <div className="modal-subtitle">Update your email, password, or avatar.</div>
+            <div className="modal-subtitle">
+              {forceChangeLogin
+                ? 'Please set a new password to continue using the site.'
+                : 'Update your email, password, or avatar.'}
+            </div>
           </div>
-          <button type="button" onClick={onClose} disabled={loading}>
+          <button type="button" onClick={onClose} disabled={loading || forceChangeLogin}>
             Close
           </button>
         </div>

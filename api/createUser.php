@@ -12,7 +12,7 @@ foreach ($required as $field) {
 $status = isset($receivedData['status']) ? (int) $receivedData['status'] : 0;
 $avatar = $receivedData['avatar'] ?? null;
 
-$query = 'INSERT INTO user (email, passwordHash, userName, classCode, status, avatar) VALUES (?, ?, ?, ?, ?, ?)';
+$query = 'INSERT INTO user (email, passwordHash, userName, classCode, status, avatar, changeLogin) VALUES (?, ?, ?, ?, ?, ?, ?)';
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {
@@ -26,8 +26,9 @@ $userName = trim($receivedData['userName']);
 $classCode = isset($receivedData['classCode']) && $receivedData['classCode'] !== '' ? trim($receivedData['classCode']) : null;
 // Store the plain text password temporarily for the email (if provided)
 $plainPassword = $receivedData['plainPassword'] ?? 'your-temporary-password';
+$changeLogin = 1; // force first-login password change
 
-$stmt->bind_param('ssssis', $email, $passwordHash, $userName, $classCode, $status, $avatar);
+$stmt->bind_param('ssssisi', $email, $passwordHash, $userName, $classCode, $status, $avatar, $changeLogin);
 
 if (!$stmt->execute()) {
     log_info('Execute failed: ' . $stmt->error);

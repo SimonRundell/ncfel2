@@ -14,7 +14,7 @@ import './App.css';
  * }} props
  * @returns {JSX.Element}
  */
-function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange }) {
+function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange, viewLocked = false }) {
   const isAdmin = currentUser && currentUser.status === 3;
   const isTeacher = currentUser && currentUser.status >= 2;
 
@@ -43,6 +43,7 @@ function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange }) {
               type="button"
               onClick={() => onViewChange('report')}
               className={activeView === 'report' ? 'menu-toggle active' : 'menu-toggle'}
+              disabled={viewLocked}
             >
               Assessment Overview
             </button>
@@ -50,6 +51,7 @@ function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange }) {
               type="button"
               onClick={() => onViewChange('marking')}
               className={activeView === 'marking' ? 'menu-toggle active' : 'menu-toggle'}
+              disabled={viewLocked}
             >
               Marking
             </button>
@@ -60,6 +62,7 @@ function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange }) {
             type="button"
             onClick={() => onViewChange('admin')}
             className={activeView === 'admin' ? 'menu-toggle active' : 'menu-toggle'}
+            disabled={viewLocked}
           >
             Admin
           </button>

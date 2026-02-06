@@ -40,7 +40,7 @@ if ($emailIdx === false || $userIdx === false) {
     send_response('CSV must include email and userName columns', 400);
 }
 
-$query = 'INSERT INTO user (email, passwordHash, userName, classCode, status, avatar) VALUES (?, ?, ?, ?, ?, ?)';
+$query = 'INSERT INTO user (email, passwordHash, userName, classCode, status, avatar, changeLogin) VALUES (?, ?, ?, ?, ?, ?, ?)';
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {
@@ -48,7 +48,8 @@ if (!$stmt) {
     send_response('Prepare failed: ' . $mysqli->error, 500);
 }
 
-$stmt->bind_param('ssssis', $email, $passwordHash, $userName, $classCode, $status, $avatar);
+$changeLogin = 1; // initialize for binding
+$stmt->bind_param('ssssisi', $email, $passwordHash, $userName, $classCode, $status, $avatar, $changeLogin);
 $inserted = 0;
 $skipped = 0;
 $errors = [];
@@ -67,6 +68,7 @@ try {
         $userName = $userIdx !== false ? trim((string) ($row[$userIdx] ?? '')) : '';
         $classCode = $classIdx !== false ? trim((string) ($row[$classIdx] ?? '')) : $classCodeDefault;
         $passwordHash = $hash;
+        $changeLogin = 1; // force password change on first login
 
         if ($email === '' || $userName === '') {
             $skipped++;
