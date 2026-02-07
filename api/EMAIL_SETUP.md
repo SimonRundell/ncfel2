@@ -62,6 +62,8 @@ Your SMTP settings are already configured in `/api/.config.json`:
 - Login link
 - Instructions to change password
 
+**Important:** Users created via bulk upload have `changeLogin` set to 1, forcing them to change their password on first login before accessing other features.
+
 ### Password Reset Requests
 **Triggered when:**
 - Student clicks "Forgotten your password?" on login page

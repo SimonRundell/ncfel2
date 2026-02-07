@@ -46,7 +46,7 @@ function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMe
                 });
                 const codes = normalizeListResponse(response.data);
                 setClassCodes(Array.isArray(codes) ? codes : []);
-                notifySuccess('Class codes loaded');
+                // notifySuccess('Class codes loaded');
             } catch (error) {
                 console.error('Error loading class codes:', error);
                 setClassCodes([]);
@@ -78,7 +78,7 @@ function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMe
             );
             const tmpStudents = normalizeListResponse(response.data);
             setStudents(Array.isArray(tmpStudents) ? tmpStudents : []);
-            notifySuccess('Students loaded');
+            // notifySuccess('Students loaded');
         } catch (error) {
             console.error('Error loading students:', error);
             notifyError('Error loading students');

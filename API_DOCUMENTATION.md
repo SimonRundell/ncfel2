@@ -152,6 +152,7 @@ Create a new user account.
 - Sends welcome email automatically if status=0
 - Email must be unique
 - `plainPassword` is NOT stored, only used for welcome email
+- New users created via bulk upload have `changeLogin` set to 1, forcing password change on first login
 
 ### POST /api/updateUser.php
 Update existing user account.
@@ -227,6 +228,7 @@ Create multiple users from CSV data.
 - Sends welcome email to all created students
 - Transactional: rolls back all on critical error
 - Continues on individual row errors
+- All bulk-created users have `changeLogin` set to 1, requiring password change on first login
 
 ### POST /api/updateSelf.php
 Update own profile (student self-service).
@@ -252,6 +254,7 @@ Update own profile (student self-service).
 **Restrictions:**
 - Can only update own record
 - Cannot change email, classCode, or status
+- If password is changed and user had `changeLogin=1`, it will be cleared to 0
 
 ## Course Management
 
@@ -586,6 +589,89 @@ Get student answers for an activity.
 - `NOTPASSED` - Did not meet criteria
 - `DISCONTINUED` - Abandoned
 
+### POST /api/getAssessments.php
+Get assessment records for a specific student with joined course and unit information.
+
+**Request Body:**
+```json
+{
+  "studentId": 123
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "status_code": 200,
+  "message": [
+    {
+      "id": 50,
+      "unitId": 10,
+      "studentId": 123,
+      "courseId": 3,
+      "assigned": "2026-02-04",
+      "deadline": "2026-03-04",
+      "dateSet": "2026-02-04 09:00:00",
+      "dateSubmitted": "2026-02-15 14:30:00",
+      "dateResubmitted": null,
+      "dateMarked": "2026-02-16 10:00:00",
+      "dateComplete": "2026-02-16 10:00:00",
+      "assessorId": 5,
+      "assessorComment": "Well done",
+      "status": "PASSED",
+      "courseName": "Health & Safety",
+      "courseCode": "HS101",
+      "unitName": "Unit 1",
+      "unitCode": "HS101/U1"
+    }
+  ]
+}
+```
+
+**Notes:**
+- Returns all current activities for the student with enriched course and unit data
+- Used by IndividualAssessment component for detailed student assessment view
+- Includes all date tracking fields and assessor information
+
+### POST /api/markAnswers.php
+Batch mark answers for an activity with outcomes and comments.
+
+**Request Body:**
+```json
+{
+  "activityId": 50,
+  "studentId": 123,
+  "outcomes": {
+    "1": "ACHIEVED",
+    "2": "NOT ACHIEVED",
+    "3": "ACHIEVED"
+  },
+  "comments": {
+    "1": "Excellent work",
+    "2": "Needs more detail",
+    "3": "Good understanding"
+  },
+  "assessorComment": "Overall good effort. Please review question 2.",
+  "assessorId": 5,
+  "newStatus": "PASSED"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "status_code": 200,
+  "message": "Marking complete. 3 answers updated."
+}
+```
+
+**Notes:**
+- Updates multiple answer records in a single transaction
+- Sets outcome (ACHIEVED/NOT ACHIEVED) and individual comments per question
+- Updates activity status and overall assessor comment
+- Records assessor ID and completion date
+- Used by MarkingDashboard component
+
 ### POST /api/saveAnswers.php
 Save or submit student answers.
 
@@ -693,7 +779,8 @@ CREATE TABLE `user` (
   `userName` VARCHAR(255) NOT NULL,
   `classCode` VARCHAR(50) NULL,
   `status` INT NOT NULL DEFAULT 0,  -- 0=student, 2=teacher, 3=admin
-  `avatar` LONGTEXT NULL
+  `avatar` LONGTEXT NULL,
+  `changeLogin` TINYINT(1) NOT NULL DEFAULT 0  -- 0=No change required, 1=Must change password on next login
 );
 ```
 

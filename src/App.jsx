@@ -147,7 +147,7 @@ useEffect(() => {
     if (sendSuccessMessage) {
        messageApi.success(sendSuccessMessage);
     }
-      setSendSuccessMessage(false);
+      // setSendSuccessMessage(false);
     
   }, [sendSuccessMessage, messageApi]);
 
@@ -231,7 +231,7 @@ useEffect(() => {
         )}
 
       </div>
-      <CMFloatAd bgColor='#242424'/>
+      <CMFloatAd />
     </>
   )
 }

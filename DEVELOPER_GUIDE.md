@@ -54,7 +54,7 @@ mysql -u root -p
 CREATE DATABASE ncfel2;
 exit
 
-mysql -u root -p ncfel2 < data/ncfel2_v3.sql
+mysql -u root -p ncfel2 < data/ncfel2_v4.sql
 ```
 
 **Start Development:**
@@ -122,6 +122,44 @@ POST /api/saveAnswers.php (status: SUBMITTED)
 Email sent to teachers
 ```
 
+**First-time Login (Bulk Upload):**
+```
+Login with temporary password
+  ↓
+App.jsx detects user.changeLogin === 1
+  ↓
+Sets mustChangePassword = true
+  ↓
+Forces StudentProfile modal open
+  ↓
+Locks all navigation (viewLocked = true)
+  ↓
+Student must change password
+  ↓
+POST /api/updateSelf.php (clears changeLogin flag)
+  ↓
+Normal navigation unlocked
+```
+
+**Teacher Marking Workflow:**
+```
+MarkingDashboard.jsx
+  ↓ (select unit)
+GET /api/getUnits.php
+  ↓ (filter submissions)
+GET /api/getCurrentActivities.php (SUBMITTED/RESUBMITTED)
+  ↓ (select submission)
+GET /api/getQuestions.php
+GET /api/getAnswers.php
+  ↓ (review and mark)
+Set outcomes (ACHIEVED/NOT ACHIEVED)
+Add comments
+  ↓ (finish marking)
+POST /api/markAnswers.php
+  ↓
+Status updated to PASSED/REDOING/etc
+```
+
 **Admin Workflow:**
 ```
 AdminPanel.jsx (Tabs)
@@ -158,22 +196,33 @@ Tab 5: AssignUnit.jsx
 5. `src/StudentAnswer.jsx` - TipTap editor, answer submission
 6. `api/saveAnswers.php` - Answer persistence, email triggers
 7. `api/emailHelper.php` - Email sending
+8. `src/MarkingDashboard.jsx` - Teacher marking workspace
+9. `api/markAnswers.php` - Batch marking operations
 
 **Admin features:**
-8. `src/UserManager.jsx` - User CRUD
-9. `src/UnitManager.jsx` - Questions editor
-10. `api/bulkUploadUsers.php` - CSV import
+10. `src/UserManager.jsx` - User CRUD
+11. `src/UnitManager.jsx` - Questions editor
+12. `api/bulkUploadUsers.php` - CSV import (sets changeLogin=1)
+13. `src/menu.jsx` - View switching navigation
+14. `src/AssessmentReport.jsx` - Printable overview
+15. `src/individualAssessment.jsx` - Student assessment history
 
 ### Database Schema Mental Model
 
 ```
 user (students, teachers, admins)
+  - changeLogin flag for forced password change
   ↓
 currentActivities (assignments)
+  - dateSet, dateSubmitted, dateMarked, dateComplete
+  - status tracking (SUBMITTED, INMARKING, PASSED, etc)
+  - assessorId and assessorComment
   ↓
 unit (with questions as JSON)
   ↓
 answers (student responses with status)
+  - outcome (ACHIEVED/NOT ACHIEVED)
+  - comment (per question)
 ```
 
 **Key Relationships:**

@@ -8,7 +8,7 @@ import {useState, useEffect} from 'react';
  * @param {{ color?: string, bgColor?: string }} props
  * @returns {JSX.Element}
  */
-function CMFloatAd({color = '#ffffff', bgColor = 'transparent'}) {
+function CMFloatAd({color = '#ffffff', bgColor = '#242424'}) {
     const [isHovered, setIsHovered] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 

@@ -175,6 +175,12 @@ Containers
   border-color: #646cff;
 }
 
+.assessment-tag a {
+  color: inherit;
+  text-decoration: none;
+}
+
+
 
 /************************************************
 
@@ -229,6 +235,7 @@ TWEAKS
     min-width: auto;
   }
 
+ 
 /************************************************
 
 MENU

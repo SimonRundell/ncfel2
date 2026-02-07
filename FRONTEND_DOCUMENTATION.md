@@ -10,25 +10,27 @@ This document provides detailed documentation for all React components in the NC
 App.jsx (Root)
 ├── Login.jsx (Unauthenticated)
 └── Authenticated Views
-    ├── Menu.jsx (Navigation)
-    ├── StudentProfile.jsx (Modal)
-    └── Role-Based Content
-        ├── AdminPanel.jsx (Status=3)
+    ├── Menu.jsx (Navigation with view switching)
+    ├── StudentProfile.jsx (Modal with forced change support)
+    ├── CMFloatAd.jsx (Floating credit banner)
+    └── Role-Based Content (activeView)
+        ├── AdminPanel.jsx (Status=3, view='admin')
         │   ├── UserManager.jsx
         │   ├── CourseManager.jsx
         │   ├── UnitManager.jsx
         │   ├── CurrentActivityManager.jsx
         │   └── AssignUnit.jsx
-    ├── StudentAssignments.jsx (Status=0,2)
-    │   └── StudentAnswer.jsx
-    ├── MarkingDashboard.jsx (Status>=2)
-    └── AssessmentReport.jsx (Status>=2)
+        ├── StudentAssignments.jsx (view='assignments')
+        │   └── StudentAnswer.jsx
+        ├── MarkingDashboard.jsx (Status>=2, view='marking')
+        └── AssessmentReport.jsx (Status>=2, view='report')
+            └── IndividualAssessment.jsx (Modal)
 ```
 
 ## Core Components
 
 ### App.jsx
-**Purpose**: Root application component managing global state and routing
+**Purpose**: Root application component managing global state and view routing
 
 **State Management:**
 ```javascript
@@ -36,23 +38,44 @@ App.jsx (Root)
 - currentUser: Authenticated user object or null
 - sendSuccessMessage: Success notification message
 - sendErrorMessage: Error notification message
-- showAdmin: Toggle admin panel (legacy)
+- activeView: Current view ('assignments', 'marking', 'report', 'admin')
 - showProfile: Toggle profile modal
+- mustChangePassword: Boolean flag if user.changeLogin is set
 ```
 
 **Flow:**
 1. Loads configuration on mount
 2. Displays Login if no currentUser
-3. Renders Menu + appropriate view based on user.status
-4. Handles global error/success messages
+3. Checks if mustChangePassword (user.changeLogin === 1)
+4. If mustChangePassword, forces profile modal open and locks navigation
+5. Renders Menu + appropriate view based on user.status and activeView
+6. Handles global error/success messages
 
 **Props**: None (root component)
 
 **Key Features:**
 - Cache-busting config load
 - Ant Design message notifications
-- Conditional rendering by authentication/role
+- View-based routing (not URL-based)
 - Profile modal management
+- Forced password change enforcement
+- View locking during mandatory operations
+
+**View Selection Logic:**
+```javascript
+useEffect(() => {
+  if (!currentUser) return;
+  if (mustChangePassword) {
+    setShowProfile(true);
+  } else if (currentUser.status === 3) {
+    setActiveView('admin');
+  } else if (currentUser.status === 2) {
+    setActiveView('marking');
+  } else {
+    setActiveView('assignments');
+  }
+}, [currentUser, mustChangePassword]);
+```
 
 ---
 
@@ -133,23 +156,28 @@ App.jsx (Root)
 ---
 
 ### menu.jsx
-**Purpose**: Navigation menu and user info display
+**Purpose**: Top navigation menu for switching views, opening profile, and logging out
 
 **Props:**
 ```javascript
 {
-  currentUser: Object,    // Current authenticated user
-  onAdmin: Function,      // Navigate to admin (status=3 only)
-  onProfile: Function,    // Open profile modal
-  onLogout: Function      // Log out user
+  currentUser: Object,         // Current authenticated user
+  activeView: string,          // Current view identifier
+  onViewChange: Function,      // Change view callback
+  onProfile: Function,         // Open profile modal
+  onLogout: Function,          // Log out user
+  viewLocked: boolean          // Disable view switching (default: false)
 }
 ```
 
 **Features:**
 - Displays user avatar (or default)
-- Shows username and role
-- Conditional "Admin" button (status=3 only)
+- Shows username
+- Role-based view switching buttons:
+  - Teachers/Admins: "Assessment Overview", "Marking"
+  - Admins only: "Admin"
 - Profile and logout buttons
+- View locking when mustChangePassword is true
 
 **User Avatar Display:**
 ```javascript
@@ -160,33 +188,56 @@ if (currentUser.avatar && currentUser.avatar !== 'null') {
 }
 ```
 
-**Role Display:**
+**View Buttons:**
 ```javascript
-status === 0: "Student"
-status === 2: "Teacher"
-status === 3: "Administrator"
+// Teachers and Admins
+<button 
+  onClick={() => onViewChange('report')}
+  className={activeView === 'report' ? 'menu-toggle active' : 'menu-toggle'}
+  disabled={viewLocked}
+>
+  Assessment Overview
+</button>
+
+<button 
+  onClick={() => onViewChange('marking')}
+  className={activeView === 'marking' ? 'menu-toggle active' : 'menu-toggle'}
+  disabled={viewLocked}
+>
+  Marking
+</button>
+
+// Admins only
+<button 
+  onClick={() => onViewChange('admin')}
+  className={activeView === 'admin' ? 'menu-toggle active' : 'menu-toggle'}
+  disabled={viewLocked}
+>
+  Admin
+</button>
 ```
 
 ---
 
 ### StudentProfile.jsx
-**Purpose**: User profile editing modal
+**Purpose**: User profile editing modal with forced password change support
 
 **Props:**
 ```javascript
 {
-  config: Object,            // API configuration
-  currentUser: Object,       // Current user data
-  onClose: Function,         // Close modal callback
-  onUpdated: Function,       // Update user in parent state
-  onError: Function          // Display error
+  config: Object,                  // API configuration
+  currentUser: Object,             // Current user data
+  onClose: Function,               // Close modal callback
+  onUpdated: Function,             // Update user in parent state
+  onError: Function,               // Display error
+  forceChangeLogin: boolean        // Force password change (default: false)
 }
 ```
 
 **State:**
 ```javascript
 - userName: string         // Editable display name
-- password: string         // New password (optional)
+- password: string         // New password (optional unless forced)
 - confirmPassword: string  // Password confirmation
 - avatar: string           // Base64 avatar image
 - isLoading: boolean       // Save in progress
@@ -198,17 +249,37 @@ status === 3: "Administrator"
 - Upload/change avatar image
 - Real-time avatar preview
 - MD5 password hashing before save
+- Forced password change mode
+  - Modal cannot be closed until password is changed
+  - Password field becomes required
+  - Close button disabled
+  - Special messaging to user
+
+**Forced Password Change Flow:**
+```javascript
+if (forceChangeLogin) {
+  // Password is required
+  if (!password.trim()) {
+    onError('You must change your password before continuing.');
+    return;
+  }
+  // Close button is disabled
+  // Modal shows special message
+}
+```
 
 **Validation:**
 - Password match confirmation
 - Required fields check
 - Image format validation (jpg, png, gif)
 - File size limits
+- Password required when forceChangeLogin=true
 
 **API Call:**
 - POST to /api/updateSelf.php
 - Updates only provided fields
 - Cannot change email, classCode, or status
+- Clears changeLogin flag when password is changed
 
 **Avatar Upload:**
 ```javascript
@@ -358,6 +429,279 @@ POST /api/saveAnswers.php
 
 ---
 
+## Teacher Components
+
+### MarkingDashboard.jsx
+**Purpose**: Teacher marking workspace for reviewing and grading student submissions
+
+**Props:**
+```javascript
+{
+  config: Object,         // API configuration
+  currentUser: Object,    // Current user (teacher/admin)
+  onError: Function,      // Error callback
+  onSuccess: Function     // Success callback
+}
+```
+
+**State:**
+```javascript
+- courses: Array           // All courses
+- units: Array             // All units
+- students: Array          // Filtered students (class-based for teachers)
+- activities: Array        // All activities
+- selectedUnitId: number   // Filter by unit
+- selectedSubmission: Object // Activity being marked
+- questions: Array         // Questions for selected unit
+- answers: Object          // Student answers map (questionId => content)
+- outcomes: Object         // Marking outcomes map (questionId => ACHIEVED/NOT ACHIEVED)
+- comments: Object         // Individual comments map (questionId => comment)
+- assessorComment: string  // Overall assessor comment
+- loading: boolean
+- saving: boolean
+```
+
+**Features:**
+- Filter submissions by unit
+- View submissions ready for marking (SUBMITTED, RESUBMITTED)
+- View submissions in progress (INMARKING, INREMARKING)
+- Sticky workspace header keeps actions visible while scrolling
+- Rich text answer preview with TipTap
+- Per-question outcome selection (ACHIEVED/NOT ACHIEVED)
+- Per-question comment field
+- Overall assessor comment
+- "Finish marking & return" action updates status
+
+**Submission Statuses:**
+- Ready to mark: SUBMITTED, RESUBMITTED
+- In progress: INMARKING, INREMARKING
+
+**Marking Flow:**
+1. Select unit from dropdown
+2. Click submission from list
+3. Review each answer
+4. Set outcome (ACHIEVED/NOT ACHIEVED) for each question
+5. Add individual comments (optional)
+6. Add overall assessor comment
+7. Click "Finish marking & return"
+8. Status updated based on outcomes:
+   - All ACHIEVED → PASSED
+   - Any NOT ACHIEVED → Chosen by teacher (PASSED, NOTPASSED, REDOING)
+
+**API Calls:**
+- GET /api/getCourses.php
+- GET /api/getUnits.php
+- POST /api/getUsers.php (filtered by class for teachers)
+- GET /api/getCurrentActivities.php
+- POST /api/getQuestions.php
+- POST /api/getAnswers.php
+- POST /api/markAnswers.php
+
+---
+
+### AssessmentReport.jsx
+**Purpose**: Filterable and printable assessment overview for teachers/admins
+
+**Props:**
+```javascript
+{
+  config: Object,         // API configuration
+  currentUser: Object,    // Current user (teacher/admin)
+  onError: Function       // Error callback
+}
+```
+
+**State:**
+```javascript
+- students: Array          // All students (filtered by teacher's class)
+- activities: Array        // All activities
+- courses: Array           // All courses
+- units: Array             // All units
+- selectedClass: string    // Filter by class
+- selectedStatus: string   // Filter by status
+- loading: boolean
+```
+
+**Features:**
+- Auto-filter by teacher's class (teachers only)
+- Filter by class code (admins)
+- Filter by activity status
+- Table shows:
+  - Student name (collapsed for consecutive rows)
+  - Class code
+  - Course name
+  - Unit name
+  - Status
+  - Date set (dd/mm/yyyy hh:mm)
+  - Date submitted
+  - Date resubmitted
+  - Date marked
+  - Date complete
+- Print button generates printable page
+- Landscape A4 layout for printing
+- Click student name opens IndividualAssessment modal
+
+**Date Formatting:**
+```javascript
+import { formatDateTime } from './dateUtils';
+// Returns 'dd/mm/yyyy hh:mm' or empty string for null dates
+```
+
+**Print Functionality:**
+```javascript
+const buildPrintHtml = () => {
+  // Generates complete HTML page with:
+  // - Filter information (class, status)
+  // - Generation timestamp
+  // - Full table with all data
+  // - Print styles (@media print)
+  // Opens in new window
+};
+```
+
+**API Calls:**
+- POST /api/getUsers.php (with classCode for teachers)
+- GET /api/getCurrentActivities.php
+- GET /api/getCourses.php
+- GET /api/getUnits.php
+
+---
+
+### IndividualAssessment.jsx
+**Purpose**: Modal view of individual student's complete assessment history with printable feedback
+
+**Props:**
+```javascript
+{
+  id: number,              // Student ID
+  config: Object,          // API configuration
+  notifyError: Function,   // Error callback
+  studentName: string      // Student display name
+}
+```
+
+**State:**
+```javascript
+- assessment: Array        // All assessments for student
+- selectedAssessment: Object // Assessment being viewed in detail
+- modalOpen: boolean       // Detail modal toggle
+- questions: Array         // Questions for selected assessment
+- answers: Object          // Answers and outcomes
+- loading: boolean
+- assessorName: string     // Name of teacher who marked
+```
+
+**Features:**
+- Table of all student's assessments with:
+  - Course and unit names
+  - Status
+  - Key dates (assigned, submitted, marked)
+- Click assessment to view details in modal
+- Detailed view shows:
+  - All questions with student answers
+  - Outcomes (ACHIEVED/NOT ACHIEVED)
+  - Individual question comments
+  - Overall assessor comment
+  - Assessor name
+  - Timestamps
+- Print button for feedback sheet
+- Printable format with proper layout
+
+**API Calls:**
+- POST /api/getAssessments.php (with studentId)
+- POST /api/getQuestions.php
+- POST /api/getAnswers.php
+- POST /api/getUsers.php (to fetch assessor name)
+
+---
+
+### CMFloatAd.jsx
+**Purpose**: Floating Exeter College credit banner with hover expansion
+
+**Props:**
+```javascript
+{
+  color: string,       // Text color (default: '#ffffff')
+  bgColor: string      // Background color (default: 'transparent')
+}
+```
+
+**State:**
+```javascript
+- isHovered: boolean   // Hover state
+- isMobile: boolean    // Mobile detection
+```
+
+**Features:**
+- Fixed position at bottom-right
+- Hover to expand and show full text
+- Mobile-responsive layout
+- Displays:
+  - Exeter College logo
+  - Copyright year (auto-updated)
+  - Designer credit (Simon Rundell)
+  - College address and contact
+  - Email link
+- Smooth CSS transitions
+- Responsive text wrapping on mobile
+
+**Styling:**
+```javascript
+// Collapsed state: 30px wide
+// Expanded state: 75% width (desktop), 90% (mobile)
+// Transitions: 1s ease-in-out
+```
+
+---
+
+## Utility Files
+
+### adminApiHelpers.js
+**Purpose**: Helper functions for API data normalization
+
+**Functions:**
+
+**normalizeListResponse(responseData)**
+```javascript
+// Handles various API response formats:
+// - Direct array
+// - {message: "[...]"} (JSON string)
+// - {message: [...]} (already parsed)
+// Returns: Normalized array
+```
+
+**Usage:**
+```javascript
+import { normalizeListResponse } from './adminApiHelpers';
+
+const response = await axios.get(config.api + '/getUsers.php');
+const users = normalizeListResponse(response.data);
+```
+
+---
+
+### dateUtils.js
+**Purpose**: Date formatting utilities
+
+**Functions:**
+
+**formatDateTime(dateString)**
+```javascript
+// Converts ISO date string to 'dd/mm/yyyy hh:mm' format
+// Returns empty string for null/undefined/invalid dates
+// Example: '2026-02-04T10:30:00' → '04/02/2026 10:30'
+```
+
+**Usage:**
+```javascript
+import { formatDateTime } from './dateUtils';
+
+const formatted = formatDateTime(activity.dateSubmitted);
+// Returns: '04/02/2026 14:30' or ''
+```
+
+---
+
 ## Admin Components
 
 ### adminPanel.jsx
@@ -437,6 +781,7 @@ POST /api/saveAnswers.php
 - Default password
 - Preview/validate before upload
 - Error reporting per row
+- All bulk-created users have `changeLogin` set to 1, forcing password change on first login
 
 **CSV Format:**
 ```csv

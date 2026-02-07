@@ -55,7 +55,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
 
       const data = normalizeListResponse(response.data);
       setUnits(Array.isArray(data) ? data : []);
-      onSuccess('Units loaded');
+      // onSuccess('Units loaded');
     } catch (error) {
       console.error('Error loading units', error);
       onError('Error loading units');

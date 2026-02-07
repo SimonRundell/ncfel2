@@ -155,7 +155,7 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
         if (user) {
 
           setCurrentUser(user);
-          setSendSuccessMessage('Login successful');
+          // setSendSuccessMessage('Login successful');
           setIsLoading(false);
         } else {
           setSendErrorMessage('User not found');

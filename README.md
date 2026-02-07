@@ -43,22 +43,28 @@ The NCFE Level 2 Certificate System is a full-stack web application designed to 
 - Track submission status
 - Request password resets
 - Update profile and avatar
+- Forced password change on first login (when required)
+- View individual assessment history
 
 ### For Teachers (Status: 2)
 - All student features plus:
-- View student submissions
-- Mark and provide feedback (sticky marking header with finish action)
+- View student submissions via Marking Dashboard
+- Mark and provide feedback (sticky marking header with "Finish marking & return" action)
 - Assessment Report: filter by class/status, printable landscape table with key dates
+- Individual Assessment view: detailed student assessment history with printable feedback
 - Monitor class progress
 - Receive email notifications for submissions
+- Navigate between Assignments, Marking, and Assessment Overview
 
 ### For Administrators (Status: 3)
 - Full system access
-- User management (create, edit, delete, bulk upload)
+- User management (create, edit, delete, bulk upload with forced password change)
 - Course and unit management
 - Activity assignment to classes
 - Reporting and analytics
 - System configuration
+- Access to all teacher features
+- Navigate between Admin, Marking, Assessment Overview, and Assignments
 
 ## Architecture
 
@@ -104,7 +110,8 @@ The NCFE Level 2 Certificate System is a full-stack web application designed to 
 ┌──────▼─────────┐   ┌──────▼──────────┐
 │ API Endpoints  │   │ Helper Classes  │
 │ - CRUD ops     │   │ - emailHelper   │
-│ - Auth         │   │ - adminApiHelper│
+│ - Auth         │   │                 │
+│ - Assessments  │   │                 │
 └────────────────┘   └─────────────────┘
 ```
 
@@ -251,11 +258,13 @@ ncfel2/
 │   ├── saveAnswers.php           # Answer submission
 │   ├── getClassCodes.php         # Class code retrieval
 │   ├── getStudents.php           # Student retrieval
+│   ├── getAssessments.php        # Assessment retrieval
+│   ├── markAnswers.php           # Batch marking operations
 │   ├── requestPasswordReset.php  # Password reset requests
 │   ├── updateSelf.php            # Self-service profile update
 │   └── server.log                # Application logs
 ├── data/
-│   └── ncfel2_v3.sql             # Database schema
+│   └── ncfel2_v4.sql             # Database schema
 ├── public/
 │   └── images/                   # Static assets
 ├── src/                          # Frontend React application
@@ -263,7 +272,7 @@ ncfel2/
 │   ├── App.css                   # Global styles
 │   ├── main.jsx                  # Entry point
 │   ├── login.jsx                 # Login component
-│   ├── menu.jsx                  # Navigation menu
+│   ├── menu.jsx                  # Navigation menu with view switching
 │   ├── adminPanel.jsx            # Admin dashboard
 │   ├── UserManager.jsx           # User CRUD interface
 │   ├── CourseManager.jsx         # Course CRUD interface
@@ -272,7 +281,13 @@ ncfel2/
 │   ├── AssignUnit.jsx            # Unit assignment interface
 │   ├── StudentAssignments.jsx    # Student assignment view
 │   ├── StudentAnswer.jsx         # Answer submission interface
-│   └── StudentProfile.jsx        # Profile management
+│   ├── StudentProfile.jsx        # Profile management
+│   ├── MarkingDashboard.jsx      # Teacher marking workspace
+│   ├── AssessmentReport.jsx      # Printable assessment overview
+│   ├── individualAssessment.jsx  # Individual student assessment view
+│   ├── CMFloatAd.jsx             # Floating Exeter College credit banner
+│   ├── adminApiHelpers.js        # API helper functions
+│   └── dateUtils.js              # Date formatting utilities
 ├── .config.json                  # Frontend config (gitignored)
 ├── package.json                  # NPM dependencies
 ├── vite.config.js                # Vite configuration
@@ -302,6 +317,7 @@ The system supports three user roles defined by the `status` field:
 - `classCode` (VARCHAR) - Student's class
 - `status` (INT) - User role (0=student, 2=teacher, 3=admin)
 - `avatar` (LONGTEXT) - Base64 encoded profile image
+- `changeLogin` (TINYINT) - Force password change on next login (0=No, 1=Yes)
 
 **course**
 - `id` (INT, PK)
@@ -398,7 +414,7 @@ npm run lint
 ### Database Migrations
 
 When modifying schema:
-1. Update `data/ncfel2_v3.sql`
+1. Update `data/ncfel2_v4.sql`
 2. Document changes
 3. Test with fresh import
 4. Update affected API endpoints
@@ -469,6 +485,8 @@ All API endpoints follow a consistent pattern:
 - `GET /api/getQuestions.php` - Get unit questions
 - `GET /api/getAnswers.php` - Get student answers
 - `POST /api/saveAnswers.php` - Submit answers
+- `POST /api/getAssessments.php` - Get assessment records
+- `POST /api/markAnswers.php` - Batch mark answers
 
 See individual PHP files for detailed parameter documentation.
 
@@ -476,9 +494,9 @@ See individual PHP files for detailed parameter documentation.
 
 ### Core Components
 
-- **App.jsx** - Root application component, handles authentication and routing
+- **App.jsx** - Root application component, handles authentication and view routing (assignments, marking, report, admin)
 - **login.jsx** - User authentication with password reset
-- **menu.jsx** - Navigation and user menu
+- **menu.jsx** - Navigation menu with role-based view switching and view locking during forced password change
 - **adminPanel.jsx** - Administrative dashboard with tabbed interface
 
 ### Admin Components
@@ -493,7 +511,19 @@ See individual PHP files for detailed parameter documentation.
 
 - **StudentAssignments.jsx** - View and access assigned units
 - **StudentAnswer.jsx** - Rich text answer submission with TipTap editor
-- **StudentProfile.jsx** - Profile management and avatar upload
+- **StudentProfile.jsx** - Profile management and avatar upload with forced password change support
+
+### Teacher Components
+
+- **MarkingDashboard.jsx** - Teacher marking workspace with sticky header and "Finish marking & return" action
+- **AssessmentReport.jsx** - Filterable and printable assessment overview with date formatting
+- **individualAssessment.jsx** - Individual student assessment history with printable feedback
+
+### Utility Components
+
+- **CMFloatAd.jsx** - Floating Exeter College credit banner with hover expansion
+- **adminApiHelpers.js** - Helper functions for API data normalization
+- **dateUtils.js** - Date formatting utilities (dd/mm/yyyy hh:mm format)
 
 See JSDoc comments in each file for detailed component documentation.
 

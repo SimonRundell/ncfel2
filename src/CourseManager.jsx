@@ -33,7 +33,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
       });
       const data = normalizeListResponse(response.data);
       setCourses(Array.isArray(data) ? data : []);
-      onSuccess('Courses loaded');
+      // onSuccess('Courses loaded');
     } catch (error) {
       console.error('Error loading courses', error);
       onError('Error loading courses');

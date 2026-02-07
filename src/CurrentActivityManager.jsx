@@ -66,7 +66,7 @@ const CurrentActivityManager = ({ config, onSuccess, onError }) => {
 
       const data = normalizeListResponse(response.data);
       setActivities(Array.isArray(data) ? data : []);
-      onSuccess('Current activities loaded');
+      // onSuccess('Current activities loaded');
     } catch (error) {
       console.error('Error loading current activities', error);
       onError('Error loading current activities');
@@ -108,14 +108,14 @@ const CurrentActivityManager = ({ config, onSuccess, onError }) => {
           { ...payload, id: form.id },
           { headers: { 'Content-Type': 'application/json' } }
         );
-        onSuccess('Current activity updated');
+        // onSuccess('Current activity updated');
       } else {
         const response = await axios.post(
           `${config.api}/createCurrentActivity.php`,
           payload,
           { headers: { 'Content-Type': 'application/json' } }
         );
-        onSuccess(getMessageFromResponse(response.data, 'Current activity created'));
+       //  onSuccess(getMessageFromResponse(response.data, 'Current activity created'));
       }
       resetForm();
       loadActivities();
@@ -151,7 +151,7 @@ const CurrentActivityManager = ({ config, onSuccess, onError }) => {
         { id: activity.id },
         { headers: { 'Content-Type': 'application/json' } }
       );
-      onSuccess('Current activity deleted');
+      // onSuccess('Current activity deleted');
       if (form.id === activity.id) resetForm();
       loadActivities();
     } catch (error) {
