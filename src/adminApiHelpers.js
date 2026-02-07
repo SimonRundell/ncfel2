@@ -26,7 +26,7 @@ export const normalizeListResponse = (payload) => {
         if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
           return parsed.data;
         }
-      } catch (e) {
+      } catch {
         // Swallow parse errors and fall through
       }
     }

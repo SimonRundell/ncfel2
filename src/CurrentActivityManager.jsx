@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
+import { normalizeListResponse } from './adminApiHelpers';
 
 const statusOptions = [
   'NOTSET',
@@ -40,13 +40,13 @@ const emptyForm = {
  * }} props
  * @returns {JSX.Element}
  */
-const CurrentActivityManager = ({ config, onSuccess, onError }) => {
+const CurrentActivityManager = ({ config, onError }) => {
   const [activities, setActivities] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({ studentId: '', courseId: '', status: '' });
 
-  const loadActivities = async () => {
+  const loadActivities = useCallback(async () => {
     if (!config?.api) return;
     setLoading(true);
     try {
@@ -73,11 +73,11 @@ const CurrentActivityManager = ({ config, onSuccess, onError }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [config, filters, onError]);
 
   useEffect(() => {
     loadActivities();
-  }, [config]);
+  }, [loadActivities]);
 
   const resetForm = () => setForm(emptyForm);
 
@@ -110,7 +110,7 @@ const CurrentActivityManager = ({ config, onSuccess, onError }) => {
         );
         // onSuccess('Current activity updated');
       } else {
-        const response = await axios.post(
+        await axios.post(
           `${config.api}/createCurrentActivity.php`,
           payload,
           { headers: { 'Content-Type': 'application/json' } }

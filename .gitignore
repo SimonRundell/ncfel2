@@ -13,6 +13,7 @@ dist-ssr
 *.local
 adminer.css
 adminer.php
+upload.ps1
 
 # Local secrets/config
 api/.config.json

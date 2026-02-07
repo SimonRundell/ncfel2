@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
 
@@ -21,7 +21,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
   const [loading, setLoading] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
 
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     if (!config?.api) {
       setCourses([]);
       return;
@@ -40,11 +40,11 @@ const CourseManager = ({ config, onSuccess, onError }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [config, onError]);
 
   useEffect(() => {
     loadCourses();
-  }, [config]);
+  }, [loadCourses]);
 
   const resetForm = () => {
     setCourseName('');

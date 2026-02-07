@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -52,7 +52,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     };
   }, []);
 
-  const questionStorageKey = (qid) => `${storageKey}-q-${qid}`;
+  const questionStorageKey = useCallback((qid) => `${storageKey}-q-${qid}`, [storageKey]);
 
   useEffect(() => {
     const rawRefs = localStorage.getItem(refsKey);
@@ -63,7 +63,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
           setRefsMap(parsed);
           return;
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
@@ -83,7 +83,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
           try {
             next[q.id] = JSON.parse(raw);
             return;
-          } catch (e) {
+          } catch {
             // ignore malformed local storage entries
           }
         }
@@ -103,7 +103,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
       });
       return next;
     });
-  }, [questions]);
+  }, [questions, questionStorageKey]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -131,7 +131,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     };
 
     fetchQuestions();
-  }, [activity?.unitId, activity?.courseId, config?.api]);
+  }, [activity?.unitId, activity?.courseId, config?.api, onError]);
 
   useEffect(() => {
     const fetchCourseName = async () => {
@@ -146,7 +146,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         if (Array.isArray(data) && data.length) {
           setCourseName(data[0].courseName || '');
         }
-      } catch (err) {
+      } catch {
         // keep silent fallback
       }
     };
@@ -167,7 +167,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         if (Array.isArray(data) && data.length) {
           setUnitName(data[0].unitName || '');
         }
-      } catch (err) {
+      } catch {
         // silent fallback to id
       }
     };
@@ -409,26 +409,26 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     }
   };
 
-  const handleReset = () => {
-    localStorage.removeItem(storageKey);
-    localStorage.removeItem(refsKey);
-    questions.forEach((q) => {
-      localStorage.removeItem(questionStorageKey(q.id));
-    });
-    setAnswers((prev) => {
-      const next = { ...prev };
-      Object.keys(next).forEach((k) => {
-        next[k] = null;
-      });
-      return next;
-    });
-    setRefsMap({});
-    setOutcomes({});
-    setMarkerComments({});
-    setAssessorComment('');
-    setActivityStatus('INPROGRESS');
-    setStatusText('IN PROGRESS · Draft cleared');
-  };
+  // const handleReset = () => {
+  //   localStorage.removeItem(storageKey);
+  //   localStorage.removeItem(refsKey);
+  //   questions.forEach((q) => {
+  //     localStorage.removeItem(questionStorageKey(q.id));
+  //   });
+  //   setAnswers((prev) => {
+  //     const next = { ...prev };
+  //     Object.keys(next).forEach((k) => {
+  //       next[k] = null;
+  //     });
+  //     return next;
+  //   });
+  //   setRefsMap({});
+  //   setOutcomes({});
+  //   setMarkerComments({});
+  //   setAssessorComment('');
+  //   setActivityStatus('INPROGRESS');
+  //   setStatusText('IN PROGRESS · Draft cleared');
+  // };
 
   const icons = {
     bold: <img src="/images/bold.png" alt="Bold" width="28" height="28" />,

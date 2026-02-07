@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { normalizeListResponse } from './adminApiHelpers';
 import StudentAnswer from './StudentAnswer.jsx';
@@ -22,7 +22,7 @@ const StudentAssignments = ({ config, currentUser, onError }) => {
   const [loading, setLoading] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
 
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     if (!config?.api) return;
     try {
       const response = await axios.get(`${config.api}/getCourses.php`, {
@@ -33,9 +33,9 @@ const StudentAssignments = ({ config, currentUser, onError }) => {
     } catch (error) {
       console.error('Error loading courses', error);
     }
-  };
+  }, [config]);
 
-  const loadUnits = async () => {
+  const loadUnits = useCallback(async () => {
     if (!config?.api) return;
     try {
       const response = await axios.get(`${config.api}/getUnits.php`, {
@@ -46,9 +46,9 @@ const StudentAssignments = ({ config, currentUser, onError }) => {
     } catch (error) {
       console.error('Error loading units', error);
     }
-  };
+  }, [config]);
 
-  const loadActivities = async () => {
+  const loadActivities = useCallback(async () => {
     if (!config?.api || !currentUser?.id) return;
     setLoading(true);
     try {
@@ -66,16 +66,16 @@ const StudentAssignments = ({ config, currentUser, onError }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [config, currentUser, onError]);
 
   useEffect(() => {
     loadCourses();
     loadUnits();
-  }, [config]);
+  }, [loadCourses, loadUnits]);
 
   useEffect(() => {
     loadActivities();
-  }, [currentUser]);
+  }, [loadActivities]);
 
   const courseMap = courses.reduce((acc, course) => {
     acc[course.id] = course.courseName;

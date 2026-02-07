@@ -91,21 +91,30 @@ function App() {
 
   useEffect(() => {
     if (!currentUser) return;
-    if (mustChangePassword) {
-      setShowProfile(true);
-    } else if (currentUser.status === 3) {
-      setActiveView('admin');
-    } else if (currentUser.status === 2) {
-      setActiveView('marking');
-    } else {
-      setActiveView('assignments');
-    }
+    
+    // Use setTimeout to avoid synchronous setState in effect
+    const timer = setTimeout(() => {
+      if (mustChangePassword) {
+        setShowProfile(true);
+      } else if (currentUser.status === 3) {
+        setActiveView('admin');
+      } else if (currentUser.status === 2) {
+        setActiveView('marking');
+      } else {
+        setActiveView('assignments');
+      }
+    }, 0);
+    
+    return () => clearTimeout(timer);
   }, [currentUser, mustChangePassword]);
 
   // If the flag clears (after password change), allow the profile modal to close
   useEffect(() => {
     if (!mustChangePassword && showProfile) {
-      setShowProfile(false);
+      const timer = setTimeout(() => {
+        setShowProfile(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [mustChangePassword, showProfile]);
 

@@ -54,7 +54,7 @@ useEffect(() => {
     if (id) {
         getAssessmentsForStudent(id);
     }
-}, [id, config])
+}, [id, config, notifyError])
 
     const handleAssessmentClick = async (ass) => {
         setSelectedAssessment(ass)
@@ -205,11 +205,6 @@ useEffect(() => {
         const achievedStatus = getAchievedStatus(selectedAssessment?.status)
         
         let questionsHTML = questions.map(question => {
-            const outcome = answers[question.id]
-            const achieved = outcome === 'achieved' || outcome === 'ACHIEVED'
-            const bgClass = outcome ? (achieved ? 'achieved' : 'working') : 'not-submitted'
-            const symbol = outcome ? (achieved ? '✓' : '✗') : '-'
-            
             return `<th style="text-align: center; min-width: 50px;">${question.QuestionRef}</th>`
         }).join('')
         

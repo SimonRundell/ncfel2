@@ -86,9 +86,8 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
           const text = await response.text();
           setMotdContent(text.trim());
         }
-      } catch (error) {
+      } catch {
         // console.log('Could not load MOTD.txt, using default message');
-        // console.log(error);
         setMotdContent("Beta Test");
       }
     };
@@ -137,7 +136,7 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
     // Convert email to lowercase for case-insensitive login
     const JSONData = { email: email.toLowerCase(), passwordHash: hashedPassword };
 
-    // console.log("JSONData:", JSONData);
+    console.log("Sending:", JSONData);
 
     try {
       const response = await axios.post(config.api + '/getLogin.php', JSONData, {
@@ -147,7 +146,7 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
       });
 
       const data = response.data;
-      // console.log('Response:', data);
+      console.log('Response:', data);
 
       // Handle the response data here
       if (data.status_code === 200) {

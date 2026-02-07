@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
 
@@ -24,7 +24,7 @@ const AssignUnit = ({ config, currentUser, onSuccess, onError }) => {
   const [selectedUnit, setSelectedUnit] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const loadClassCodes = async () => {
+  const loadClassCodes = useCallback(async () => {
     if (!config?.api) return;
     try {
       const response = await axios.get(`${config.api}/getClassCodes.php`, {
@@ -37,9 +37,9 @@ const AssignUnit = ({ config, currentUser, onSuccess, onError }) => {
       console.error('Error loading class codes', error);
       onError('Error loading class codes');
     }
-  };
+  }, [config, onError]);
 
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     if (!config?.api) return;
     try {
       const response = await axios.get(`${config.api}/getCourses.php`, {
@@ -51,9 +51,9 @@ const AssignUnit = ({ config, currentUser, onSuccess, onError }) => {
       console.error('Error loading courses', error);
       onError('Error loading courses');
     }
-  };
+  }, [config, onError]);
 
-  const loadUnits = async (courseId) => {
+  const loadUnits = useCallback(async (courseId) => {
     if (!config?.api) return;
     if (!courseId) {
       setUnits([]);
@@ -71,17 +71,17 @@ const AssignUnit = ({ config, currentUser, onSuccess, onError }) => {
       console.error('Error loading units', error);
       onError('Error loading units');
     }
-  };
+  }, [config, onError]);
 
   useEffect(() => {
     loadClassCodes();
     loadCourses();
-  }, [config]);
+  }, [loadClassCodes, loadCourses]);
 
   useEffect(() => {
     setSelectedUnit('');
     loadUnits(selectedCourse);
-  }, [selectedCourse]);
+  }, [selectedCourse, loadUnits]);
 
   const handleAssign = async () => {
     if (!selectedClass || !selectedCourse || !selectedUnit) {

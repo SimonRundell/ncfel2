@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
 
@@ -21,7 +21,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
   const [form, setForm] = useState({ id: null, courseid: '', unitName: '', unitCode: '' });
   const [unitToDelete, setUnitToDelete] = useState(null);
 
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     if (!config?.api) return;
     try {
       const response = await axios.get(`${config.api}/getCourses.php`, {
@@ -33,9 +33,9 @@ const UnitManager = ({ config, onSuccess, onError }) => {
       console.error('Error loading courses', error);
       onError('Error loading courses');
     }
-  };
+  }, [config, onError]);
 
-  const loadUnits = async () => {
+  const loadUnits = useCallback(async () => {
     if (!config?.api) {
       setUnits([]);
       return;
@@ -62,15 +62,15 @@ const UnitManager = ({ config, onSuccess, onError }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [config, filterCourseId, onError]);
 
   useEffect(() => {
     loadCourses();
-  }, [config]);
+  }, [loadCourses]);
 
   useEffect(() => {
     loadUnits();
-  }, [config, filterCourseId]);
+  }, [loadUnits]);
 
   const resetForm = () => setForm({ id: null, courseid: '', unitName: '', unitCode: '' });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import CourseManager from './CourseManager.jsx';
 import UnitManager from './UnitManager.jsx';
@@ -30,7 +30,7 @@ function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMe
 
 
     const notifySuccess = (msg) => setSendSuccessMessage(msg);
-    const notifyError = (msg) => setSendErrorMessage(msg);
+    const notifyError = useCallback((msg) => setSendErrorMessage(msg), [setSendErrorMessage]);
 
     useEffect(() => {
         const fetchClassCodes = async () => {
@@ -57,7 +57,7 @@ function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMe
         };
 
         fetchClassCodes();
-    }, [config]);
+    }, [config, notifyError]);
 
     const fetchStudents = async (classCode) => {
         setSelectedClass(classCode);

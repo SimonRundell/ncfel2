@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import CryptoJS from 'crypto-js';
 import axios from 'axios';
 import { Spin } from 'antd';
@@ -50,7 +50,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
   const maxAvatarBytes = 10 * 1024 * 1024; // 10MB cap
   const maxCsvBytes = 5 * 1024 * 1024; // 5MB cap for bulk CSV
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     if (!config?.api) return;
     setLoading(true);
     try {
@@ -66,21 +66,9 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
     } finally {
       setLoading(false);
     }
-  };
+  }, [config, onSuccess, onError]);
 
-  useEffect(() => {
-    loadUsers();
-    loadClassCodes();
-  }, [config]);
-
-  useEffect(() => {
-    if (selectedUser && selectedUser.id) {
-      handleEdit(selectedUser);
-      if (clearSelectedUser) clearSelectedUser();
-    }
-  }, [selectedUser]);
-
-  const loadClassCodes = async () => {
+  const loadClassCodes = useCallback(async () => {
     if (!config?.api) return;
     try {
       const response = await axios.get(`${config.api}/getClassCodes.php`, {
@@ -93,7 +81,19 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
       console.error('Error loading class codes', error);
       onError('Error loading class codes');
     }
-  };
+  }, [config, onError]);
+
+  useEffect(() => {
+    loadUsers();
+    loadClassCodes();
+  }, [loadUsers, loadClassCodes]);
+
+  useEffect(() => {
+    if (selectedUser && selectedUser.id) {
+      handleEdit(selectedUser);
+      if (clearSelectedUser) clearSelectedUser();
+    }
+  }, [selectedUser, clearSelectedUser, handleEdit]);
 
   const resetForm = () => setForm(emptyForm);
 
@@ -280,7 +280,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
     }
   };
 
-  const handleEdit = (user) => {
+  const handleEdit = useCallback((user) => {
     setForm({
       id: user.id ?? user.ID ?? null,
       email: user.email || '',
@@ -291,7 +291,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
       passwordHash: user.passwordHash || '',
       avatar: user.avatar || '',
     });
-  };
+  }, []);
 
   const handleDeleteRequest = (user) => {
     setUserToDelete(user);
