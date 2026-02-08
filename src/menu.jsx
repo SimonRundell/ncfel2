@@ -10,11 +10,12 @@ import './App.css';
  *  onLogout: () => void,
  *  onProfile: () => void,
  *  activeView: string,
- *  onViewChange: (view: string) => void
+ *  adminSection?: string,
+ *  onViewChange: (view: string, section?: string) => void
  * }} props
  * @returns {JSX.Element}
  */
-function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange, viewLocked = false }) {
+function Menu({ currentUser, onLogout, onProfile, activeView, adminSection, onViewChange, viewLocked = false }) {
   const isAdmin = currentUser && currentUser.status === 3;
   const isTeacher = currentUser && currentUser.status >= 2;
 
@@ -49,6 +50,22 @@ function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange, view
             </button>
             <button
               type="button"
+              onClick={() => onViewChange('admin', 'roster')}
+              className={activeView === 'admin' && adminSection === 'roster' ? 'menu-toggle active' : 'menu-toggle'}
+              disabled={viewLocked}
+            >
+              Class Roster
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewChange('admin', 'assign')}
+              className={activeView === 'admin' && adminSection === 'assign' ? 'menu-toggle active' : 'menu-toggle'}
+              disabled={viewLocked}
+            >
+              Assign
+            </button>
+            <button
+              type="button"
               onClick={() => onViewChange('marking')}
               className={activeView === 'marking' ? 'menu-toggle active' : 'menu-toggle'}
               disabled={viewLocked}
@@ -60,7 +77,7 @@ function Menu({ currentUser, onLogout, onProfile, activeView, onViewChange, view
         {isAdmin && (
           <button
             type="button"
-            onClick={() => onViewChange('admin')}
+            onClick={() => onViewChange('admin', 'roster')}
             className={activeView === 'admin' ? 'menu-toggle active' : 'menu-toggle'}
             disabled={viewLocked}
           >

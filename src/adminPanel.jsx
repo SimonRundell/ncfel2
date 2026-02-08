@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import CourseManager from './CourseManager.jsx';
 import UnitManager from './UnitManager.jsx';
@@ -15,12 +15,13 @@ import { normalizeListResponse } from './adminApiHelpers';
  *  config: { api: string } | null,
  *  currentUser: object,
  *  setSendSuccessMessage: (msg: string) => void,
- *  setSendErrorMessage: (msg: string) => void
+ *  setSendErrorMessage: (msg: string) => void,
+ *  initialSection?: string
  * }} props
  * @returns {JSX.Element}
  */
-function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMessage }) {
-    const [activeSection, setActiveSection] = useState('roster');
+function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMessage, initialSection = 'roster' }) {
+    const [activeSection, setActiveSection] = useState(initialSection);
     const [classCodes, setClassCodes] = useState([]);
     const [students, setStudents] = useState([]);
     const [rosterSearch, setRosterSearch] = useState('');
@@ -88,14 +89,32 @@ function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMe
     };
 
 
-    const sections = [
-        { key: 'roster', label: 'Class roster' },
-        { key: 'courses', label: 'Courses' },
-        { key: 'units', label: 'Units' },
-        { key: 'assign', label: 'Set Assessments' },
-        { key: 'users', label: 'Users' },
+    const sections = useMemo(() => {
+        const adminSections = [
+            { key: 'roster', label: 'Class roster' },
+            { key: 'courses', label: 'Courses' },
+            { key: 'units', label: 'Units' },
+            { key: 'assign', label: 'Set Assessments' },
+            { key: 'users', label: 'Users' },
+        ];
+        const teacherSections = [
+            { key: 'roster', label: 'Class roster' },
+            { key: 'assign', label: 'Set Assessments' },
+        ];
 
-    ];
+        return currentUser?.status === 3 ? adminSections : teacherSections;
+    }, [currentUser?.status]);
+
+    useEffect(() => {
+        if (initialSection && sections.some((section) => section.key === initialSection)) {
+            setActiveSection(initialSection);
+            return;
+        }
+
+        if (!sections.some((section) => section.key === activeSection)) {
+            setActiveSection(sections[0]?.key || 'roster');
+        }
+    }, [activeSection, initialSection, sections]);
 
     return (
         <div className="admin-panel">

@@ -83,6 +83,19 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
     }
   }, [config, onError]);
 
+  const handleEdit = useCallback((user) => {
+    setForm({
+      id: user.id ?? user.ID ?? null,
+      email: user.email || '',
+      userName: user.userName || '',
+        classCode: user.classCode || '',
+        status: Number(user.status ?? 0),
+      password: '',
+      passwordHash: user.passwordHash || '',
+      avatar: user.avatar || '',
+    });
+  }, []);
+
   useEffect(() => {
     loadUsers();
     loadClassCodes();
@@ -279,19 +292,6 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
       setLoading(false);
     }
   };
-
-  const handleEdit = useCallback((user) => {
-    setForm({
-      id: user.id ?? user.ID ?? null,
-      email: user.email || '',
-      userName: user.userName || '',
-        classCode: user.classCode || '',
-        status: Number(user.status ?? 0),
-      password: '',
-      passwordHash: user.passwordHash || '',
-      avatar: user.avatar || '',
-    });
-  }, []);
 
   const handleDeleteRequest = (user) => {
     setUserToDelete(user);

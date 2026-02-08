@@ -13,7 +13,7 @@
  * @requires axios - HTTP client for API requests
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import {Spin, message} from 'antd';
 import Login from './login.jsx';
@@ -82,12 +82,14 @@ function App() {
   * @type {[string, Function]} Active view: assignments, marking, admin, report
    */
   const [activeView, setActiveView] = useState('assignments');
+  const [adminSection, setAdminSection] = useState('roster');
   
   /**
    * @type {[boolean, Function]} Toggle profile modal visibility
    */
   const [showProfile, setShowProfile] = useState(false);
   const mustChangePassword = Boolean(currentUser?.changeLogin);
+  const prevMustChangePassword = useRef(mustChangePassword);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -98,6 +100,7 @@ function App() {
         setShowProfile(true);
       } else if (currentUser.status === 3) {
         setActiveView('admin');
+        setAdminSection('roster');
       } else if (currentUser.status === 2) {
         setActiveView('marking');
       } else {
@@ -110,7 +113,11 @@ function App() {
 
   // If the flag clears (after password change), allow the profile modal to close
   useEffect(() => {
-    if (!mustChangePassword && showProfile) {
+    // Only auto-close if transitioning from forced password change (true -> false)
+    const wasForced = prevMustChangePassword.current === true;
+    prevMustChangePassword.current = mustChangePassword;
+    
+    if (wasForced && !mustChangePassword && showProfile) {
       const timer = setTimeout(() => {
         setShowProfile(false);
       }, 0);
@@ -184,17 +191,23 @@ useEffect(() => {
             <Menu
                currentUser={currentUser}
                activeView={activeView}
-              onViewChange={(view) => { if (!mustChangePassword) setActiveView(view); }}
+               adminSection={adminSection}
+              onViewChange={(view, section) => {
+                if (mustChangePassword) return;
+                setActiveView(view);
+                if (section) setAdminSection(section);
+              }}
               onProfile={() => setShowProfile(true)}
                onLogout={() => setCurrentUser(null)}
               viewLocked={mustChangePassword}
             />
-            {activeView === 'admin' && currentUser.status === 3 && (
+            {activeView === 'admin' && currentUser.status >= 2 && (
               <AdminPanel
                 config={config}
                 currentUser={currentUser}
                 setSendSuccessMessage={setSendSuccessMessage}
                 setSendErrorMessage={setSendErrorMessage}
+                initialSection={adminSection}
               />
             )}
             {activeView === 'marking' && currentUser.status >= 2 && (
