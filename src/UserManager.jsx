@@ -44,6 +44,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
   const [bulkCsvContent, setBulkCsvContent] = useState('');
   const [bulkLoading, setBulkLoading] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [showEditor, setShowEditor] = useState(false);
   const needsClassCode = form.status === 0;
   const fileInputRef = useRef(null);
   const bulkFileInputRef = useRef(null);
@@ -94,6 +95,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
       passwordHash: user.passwordHash || '',
       avatar: user.avatar || '',
     });
+    setShowEditor(true);
   }, []);
 
   useEffect(() => {
@@ -109,6 +111,16 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
   }, [selectedUser, clearSelectedUser, handleEdit]);
 
   const resetForm = () => setForm(emptyForm);
+
+  const closeEditor = () => {
+    resetForm();
+    setShowEditor(false);
+  };
+
+  const handleAdd = () => {
+    resetForm();
+    setShowEditor(true);
+  };
 
   const resolvePasswordHash = () => {
     if (form.password && form.password.trim() !== '') {
@@ -283,7 +295,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
         );
         onSuccess(getMessageFromResponse(response.data, 'User created'));
       }
-      resetForm();
+      closeEditor();
       loadUsers();
     } catch (error) {
       console.error('Error saving user', error);
@@ -307,7 +319,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
         { headers: { 'Content-Type': 'application/json' } }
       );
       onSuccess('User deleted');
-      if (form.id === userToDelete.id) resetForm();
+      if (form.id === userToDelete.id) closeEditor();
       loadUsers();
     } catch (error) {
       console.error('Error deleting user', error);
@@ -358,111 +370,7 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
           <div className="admin-section-title">Users</div>
           <div className="admin-section-subtitle">Manage logins and roles.</div>
         </div>
-        <button type="button" onClick={loadUsers} disabled={loading}>
-          Refresh
-        </button>
-        <button type="button" onClick={handleOpenBulk} disabled={loading}>
-          Add bulk users
-        </button>
-      </div>
-
-      
-
-      <form className="admin-form" onSubmit={handleSubmit}>
-        <div className="admin-grid">
-          <label className="admin-label">
-            Email
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-              required
-            />
-          </label>
-          <label className="admin-label">
-            Username
-            <input
-              type="text"
-              value={form.userName}
-              onChange={(e) => setForm((prev) => ({ ...prev, userName: e.target.value }))}
-              required
-            />
-          </label>
-          <label className="admin-label">
-            Role
-            <select
-              value={form.status}
-              onChange={(e) => {
-                const newStatus = Number(e.target.value);
-                setForm((prev) => ({
-                  ...prev,
-                  status: newStatus,
-                  // keep classCode intact; optional for all roles now
-                }));
-              }}
-            >
-              <option value={0}>Student</option>
-              <option value={2}>Teacher</option>
-              <option value={3}>Admin</option>
-            </select>
-          </label>
-          {needsClassCode && (
-            <label className="admin-label">
-              Class code (optional)
-              <select
-                value={form.classCode || ''}
-                onChange={(e) => setForm((prev) => ({ ...prev, classCode: e.target.value }))}
-              >
-                <option value="">No class</option>
-                {classCodes.map((code) => (
-                  <option key={code} value={code}>{code}</option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
-
-        <div className="admin-grid">
-          <label className="admin-label">
-            Password
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-              placeholder="Only fill to change password"
-            />
-          </label>
-          <label className="admin-label">
-            Avatar (max 10MB)
-            <div className="admin-avatar-row">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarFileChange}
-                className="file-input-hidden"
-              />
-              <button
-                type="button"
-                className="file-input-button"
-                onClick={triggerAvatarBrowse}
-                disabled={loading}
-              >
-                Choose file
-              </button>
-              {form.avatar && (
-                <img
-                  src={form.avatar}
-                  alt="Avatar preview"
-                  className="avatar-thumb"
-                />
-              )}
-            </div>
-          </label>
-        </div>
-
-      <div className="admin-form-footer">
-        <div className="admin-filters">
+        <div className="admin-inline">
           <input
             type="text"
             className="admin-filter-input"
@@ -478,20 +386,123 @@ const UserManager = ({ config, onSuccess, onError, selectedUser, clearSelectedUs
             />
             Students only
           </label>
-        </div>
-
-        <div className="admin-form-actions">
-          {form.id && (
-            <button type="button" onClick={resetForm} disabled={loading}>
-              Cancel
-            </button>
-          )}
-          <button type="submit" disabled={loading}>
-            {form.id ? 'Update this user' : 'Add this user'}
+          <button type="button" onClick={loadUsers} disabled={loading}>
+            Refresh
+          </button>
+          <button type="button" onClick={handleAdd} disabled={loading}>
+            Add user
+          </button>
+          <button type="button" onClick={handleOpenBulk} disabled={loading}>
+            Add bulk users
           </button>
         </div>
       </div>
-      </form>
+
+      <div className={showEditor ? 'admin-editor is-open' : 'admin-editor'} aria-hidden={!showEditor}>
+        <form className="admin-form" onSubmit={handleSubmit}>
+          <div className="admin-grid">
+            <label className="admin-label">
+              Email
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                required
+              />
+            </label>
+            <label className="admin-label">
+              Username
+              <input
+                type="text"
+                value={form.userName}
+                onChange={(e) => setForm((prev) => ({ ...prev, userName: e.target.value }))}
+                required
+              />
+            </label>
+            <label className="admin-label">
+              Role
+              <select
+                value={form.status}
+                onChange={(e) => {
+                  const newStatus = Number(e.target.value);
+                  setForm((prev) => ({
+                    ...prev,
+                    status: newStatus,
+                    // keep classCode intact; optional for all roles now
+                  }));
+                }}
+              >
+                <option value={0}>Student</option>
+                <option value={2}>Teacher</option>
+                <option value={3}>Admin</option>
+              </select>
+            </label>
+            {needsClassCode && (
+              <label className="admin-label">
+                Class code (optional)
+                <select
+                  value={form.classCode || ''}
+                  onChange={(e) => setForm((prev) => ({ ...prev, classCode: e.target.value }))}
+                >
+                  <option value="">No class</option>
+                  {classCodes.map((code) => (
+                    <option key={code} value={code}>{code}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+
+          <div className="admin-grid">
+            <label className="admin-label">
+              Password
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                placeholder="Only fill to change password"
+              />
+            </label>
+            <label className="admin-label">
+              Avatar (max 10MB)
+              <div className="admin-avatar-row">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarFileChange}
+                  className="file-input-hidden"
+                />
+                <button
+                  type="button"
+                  className="file-input-button"
+                  onClick={triggerAvatarBrowse}
+                  disabled={loading}
+                >
+                  Choose file
+                </button>
+                {form.avatar && (
+                  <img
+                    src={form.avatar}
+                    alt="Avatar preview"
+                    className="avatar-thumb"
+                  />
+                )}
+              </div>
+            </label>
+          </div>
+
+          <div className="admin-form-actions">
+            <button type="button" onClick={closeEditor} disabled={loading}>
+              Close
+            </button>
+            <button type="submit" disabled={loading}>
+              {form.id ? 'Update this user' : 'Add this user'}
+            </button>
+          </div>
+        </form>
+      </div>
+
 
       <div className="admin-list">
         {filteredUsers.map((user) => (

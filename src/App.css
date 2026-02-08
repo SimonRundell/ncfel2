@@ -97,10 +97,10 @@ Containers
 
 .login-container {
   margin: 0 auto;
-  width: 50vw;
+  width: min(460px, calc(100% - 2rem));
   margin-top: 40px; 
   min-width: 320px;
-  max-width: 500px;
+  max-width: 460px;
   z-index: 99;
   position: relative;
   box-sizing: border-box;
@@ -133,6 +133,7 @@ Containers
   border-radius: 8px;
   border: 1px solid #ccc;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
   -webkit-border-radius: 8px;
   -moz-border-radius: 8px;
   -ms-border-radius:  8px;
@@ -161,14 +162,17 @@ Containers
 }
 
 .assessment-tag {
-  display: inline-block;
+  display: inline-flex;
+  flex-wrap: wrap;
   background: #243447;
   border: 1px solid #3a516b;
   padding: 0.25rem 0.65rem;
   border-radius: 999px;
   font-size: 0.7rem;
   color: #f0f0f0;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .assessment-tag :hover {
@@ -187,6 +191,18 @@ Containers
 TWEAKS
 
 *************************************************/
+
+.yellow {
+  color: #f0ff6b;
+}
+
+.red {
+  color: #ff6b6b;
+}
+
+.green {
+  color: #6bff8c;
+}
 
 .topgap{
   margin-top: 5px;
@@ -230,8 +246,8 @@ TWEAKS
 
   .motd {
     padding-top: 20px;
-    width: 40vw;
-    max-width: 40vw;
+    width: min(460px, calc(100% - 2rem));
+    max-width: 460px;
     min-width: auto;
   }
 
@@ -356,6 +372,22 @@ STUDENT LIST
   background-color: #2e2e2e;
 }
 
+.roster-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.roster-header .biggergap {
+  margin-left: 0;
+}
+
+.roster-header .admin-filter-input {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
 /************************************************
 
 FILE INPUT STYLING
@@ -440,6 +472,22 @@ ADMIN
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
 }
 
+.admin-editor {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+  transition: max-height 0.35s ease, opacity 0.2s ease;
+}
+
+.admin-editor.is-open {
+  max-height: 1400px;
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
 .admin-section-header {
   display: flex;
   justify-content: space-between;
@@ -482,7 +530,9 @@ ADMIN
 }
 
 .admin-filter-input {
-  min-width: 325px;
+  min-width: 220px;
+  max-width: 360px;
+  flex: 1 1 220px;
 }
 
 .admin-filter-check {
@@ -743,6 +793,8 @@ MODAL
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  flex: 1 1 320px;
 }
 
 .admin-select {
@@ -751,6 +803,258 @@ MODAL
   border: 1px solid #3a3a3a;
   background: #1f1f1f;
   color: #f0f0f0;
+}
+
+@media (max-width: 720px) {
+  .admin-section-header {
+    align-items: flex-start;
+  }
+
+  .admin-inline {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .admin-filter-input {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  :root {
+    padding: 0;
+    font-size: 14px;
+  }
+
+  body {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .app-header {
+    padding: 1rem 0.5rem;
+    width: 100%;
+  }
+
+  .header-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    text-align: center;
+  }
+
+  .login-header {
+    font-size: 1.2em;
+  }
+
+  .admin-section-title,
+  .student-assignment-title,
+  .marking-title {
+    font-size: 1.05rem;
+  }
+
+  .admin-section-subtitle,
+  .student-assignment-sub,
+  .marking-subtitle,
+  .admin-row-subtitle,
+  .student-assignment-meta {
+    font-size: 0.85rem;
+  }
+
+  .logo {
+    height: 40px;
+  }
+
+  .app-container {
+    width: 100%;
+  }
+
+  .login-container {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .motd {
+    width: calc(100% - 1rem);
+    max-width: calc(100% - 1rem);
+  }
+
+  .login-form {
+    padding: 1rem;
+  }
+
+  .menu-block {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menu-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .student-assignment-section {
+    padding: 0.85rem;
+  }
+
+  .student-assignment-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .student-assignment-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-assignment-card {
+    padding: 0.75rem;
+  }
+
+  .admin-panel {
+    width: 100%;
+  }
+
+  .admin-nav {
+    gap: 0.4rem;
+  }
+
+  .admin-nav-button {
+    flex: 1 1 100%;
+    text-align: left;
+  }
+
+  .admin-section {
+    padding: 0.85rem;
+  }
+
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-form-actions button {
+    width: 100%;
+  }
+
+  .admin-inline {
+    width: 100%;
+  }
+
+  .admin-inline > * {
+    flex: 1 1 100%;
+  }
+
+  .student-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .biggergap {
+    margin-left: 0;
+  }
+
+  .report-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .report-table {
+    min-width: 720px;
+    font-size: 0.8rem;
+  }
+
+  .marking-unit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marking-workspace-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .marking-workspace-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .marking-workspace-actions button {
+    flex: 1 1 100%;
+  }
+
+  .marking-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marking-comment {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .answer-toolbar {
+    gap: 0.25rem;
+  }
+
+  .answer-toolbar-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .qa-question {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .reference-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reference-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reference-remove,
+  .reference-add {
+    width: 100%;
+  }
+
+  .answer-editor {
+    margin: 0.5rem;
+  }
+
+  .question-scroll {
+    max-height: 70vh;
+  }
+
+  .modal {
+    width: 94vw;
+    height: auto;
+    max-height: 92vh;
+  }
+
+  .modal-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-actions {
+    justify-content: stretch;
+  }
+
+  .confirm-modal {
+    width: 94vw;
+    max-width: 94vw;
+  }
+
 }
 
 /************************************************

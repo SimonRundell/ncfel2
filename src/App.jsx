@@ -208,6 +208,7 @@ useEffect(() => {
                 setSendSuccessMessage={setSendSuccessMessage}
                 setSendErrorMessage={setSendErrorMessage}
                 initialSection={adminSection}
+                onSectionChange={setAdminSection}
               />
             )}
             {activeView === 'marking' && currentUser.status >= 2 && (

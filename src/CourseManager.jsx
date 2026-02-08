@@ -20,6 +20,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
+  const [showEditor, setShowEditor] = useState(false);
 
   const loadCourses = useCallback(async () => {
     if (!config?.api) {
@@ -52,6 +53,16 @@ const CourseManager = ({ config, onSuccess, onError }) => {
     setEditingId(null);
   };
 
+  const closeEditor = () => {
+    resetForm();
+    setShowEditor(false);
+  };
+
+  const handleAdd = () => {
+    resetForm();
+    setShowEditor(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!courseName.trim() || !courseCode.trim()) {
@@ -76,7 +87,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
         );
         onSuccess(getMessageFromResponse(response.data, 'Course created'));
       }
-      resetForm();
+      closeEditor();
       loadCourses();
     } catch (error) {
       console.error('Error saving course', error);
@@ -90,6 +101,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
     setEditingId(course.id);
     setCourseName(course.courseName || '');
     setCourseCode(course.courseCode || '');
+    setShowEditor(true);
   };
 
   const handleDeleteRequest = (course) => {
@@ -107,7 +119,7 @@ const CourseManager = ({ config, onSuccess, onError }) => {
       );
       onSuccess('Course deleted');
       if (editingId === courseToDelete.id) {
-        resetForm();
+        closeEditor();
       }
       loadCourses();
     } catch (error) {
@@ -130,41 +142,46 @@ const CourseManager = ({ config, onSuccess, onError }) => {
           <div className="admin-section-title">Courses</div>
           <div className="admin-section-subtitle">Create, rename or remove courses.</div>
         </div>
-        <button type="button" onClick={loadCourses} disabled={loading}>
-          Refresh
-        </button>
-      </div>
-
-      <form className="admin-form" onSubmit={handleSubmit}>
-        <label className="admin-label">
-          Course name
-          <input
-            type="text"
-            value={courseName}
-            onChange={(e) => setCourseName(e.target.value)}
-            placeholder="e.g. Cyber Security"
-          />
-        </label>
-        <label className="admin-label">
-          Course code
-          <input
-            type="text"
-            value={courseCode}
-            onChange={(e) => setCourseCode(e.target.value)}
-            placeholder="e.g. CS101"
-          />
-        </label>
-        <div className="admin-form-actions">
-          {editingId && (
-            <button type="button" onClick={resetForm} disabled={loading}>
-              Cancel
-            </button>
-          )}
-          <button type="submit" disabled={loading}>
-            {editingId ? 'Update course' : 'Add course'}
+        <div className="admin-inline">
+          <button type="button" onClick={loadCourses} disabled={loading}>
+            Refresh
+          </button>
+          <button type="button" onClick={handleAdd} disabled={loading}>
+            Add course
           </button>
         </div>
-      </form>
+      </div>
+
+      <div className={showEditor ? 'admin-editor is-open' : 'admin-editor'} aria-hidden={!showEditor}>
+        <form className="admin-form" onSubmit={handleSubmit}>
+          <label className="admin-label">
+            Course name
+            <input
+              type="text"
+              value={courseName}
+              onChange={(e) => setCourseName(e.target.value)}
+              placeholder="e.g. Cyber Security"
+            />
+          </label>
+          <label className="admin-label">
+            Course code
+            <input
+              type="text"
+              value={courseCode}
+              onChange={(e) => setCourseCode(e.target.value)}
+              placeholder="e.g. CS101"
+            />
+          </label>
+          <div className="admin-form-actions">
+            <button type="button" onClick={closeEditor} disabled={loading}>
+              Close
+            </button>
+            <button type="submit" disabled={loading}>
+              {editingId ? 'Update course' : 'Add course'}
+            </button>
+          </div>
+        </form>
+      </div>
 
       <div className="admin-list">
         {courses.map((course) => (

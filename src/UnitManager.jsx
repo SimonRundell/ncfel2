@@ -20,6 +20,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
   const [filterCourseId, setFilterCourseId] = useState('');
   const [form, setForm] = useState({ id: null, courseid: '', unitName: '', unitCode: '' });
   const [unitToDelete, setUnitToDelete] = useState(null);
+  const [showEditor, setShowEditor] = useState(false);
 
   const loadCourses = useCallback(async () => {
     if (!config?.api) return;
@@ -74,6 +75,16 @@ const UnitManager = ({ config, onSuccess, onError }) => {
 
   const resetForm = () => setForm({ id: null, courseid: '', unitName: '', unitCode: '' });
 
+  const closeEditor = () => {
+    resetForm();
+    setShowEditor(false);
+  };
+
+  const handleAdd = () => {
+    resetForm();
+    setShowEditor(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.courseid || !form.unitName.trim() || !form.unitCode.trim()) {
@@ -99,7 +110,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
         );
         onSuccess(getMessageFromResponse(response.data, 'Unit created'));
       }
-      resetForm();
+      closeEditor();
       loadUnits();
     } catch (error) {
       console.error('Error saving unit', error);
@@ -111,6 +122,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
 
   const handleEdit = (unit) => {
     setForm({ id: unit.id, courseid: unit.courseid, unitName: unit.unitName || '', unitCode: unit.unitCode || '' });
+    setShowEditor(true);
   };
 
   const handleDeleteRequest = (unit) => {
@@ -127,7 +139,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
         { headers: { 'Content-Type': 'application/json' } }
       );
       onSuccess('Unit deleted');
-      if (form.id === unitToDelete.id) resetForm();
+      if (form.id === unitToDelete.id) closeEditor();
       loadUnits();
     } catch (error) {
       console.error('Error deleting unit', error);
@@ -165,54 +177,57 @@ const UnitManager = ({ config, onSuccess, onError }) => {
           <button type="button" onClick={loadUnits} disabled={loading}>
             Refresh
           </button>
+          <button type="button" onClick={handleAdd} disabled={loading}>
+            Add unit
+          </button>
         </div>
       </div>
 
-      <form className="admin-form" onSubmit={handleSubmit}>
-        <label className="admin-label">
-          Course
-          <select
-            value={form.courseid}
-            onChange={(e) => setForm((prev) => ({ ...prev, courseid: e.target.value }))}
-            required
-          >
-            <option value="">Select course</option>
-            {courses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.courseName}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="admin-label">
-          Unit name
-          <input
-            type="text"
-            value={form.unitName}
-            onChange={(e) => setForm((prev) => ({ ...prev, unitName: e.target.value }))}
-            placeholder="e.g. Networking"
-          />
-        </label>
-        <label className="admin-label">
-          Unit code
-          <input
-            type="text"
-            value={form.unitCode}
-            onChange={(e) => setForm((prev) => ({ ...prev, unitCode: e.target.value }))}
-            placeholder="e.g. NET-201"
-          />
-        </label>
-        <div className="admin-form-actions">
-          {form.id && (
-            <button type="button" onClick={resetForm} disabled={loading}>
-              Cancel
+      <div className={showEditor ? 'admin-editor is-open' : 'admin-editor'} aria-hidden={!showEditor}>
+        <form className="admin-form" onSubmit={handleSubmit}>
+          <label className="admin-label">
+            Course
+            <select
+              value={form.courseid}
+              onChange={(e) => setForm((prev) => ({ ...prev, courseid: e.target.value }))}
+              required
+            >
+              <option value="">Select course</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.courseName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="admin-label">
+            Unit name
+            <input
+              type="text"
+              value={form.unitName}
+              onChange={(e) => setForm((prev) => ({ ...prev, unitName: e.target.value }))}
+              placeholder="e.g. Networking"
+            />
+          </label>
+          <label className="admin-label">
+            Unit code
+            <input
+              type="text"
+              value={form.unitCode}
+              onChange={(e) => setForm((prev) => ({ ...prev, unitCode: e.target.value }))}
+              placeholder="e.g. NET-201"
+            />
+          </label>
+          <div className="admin-form-actions">
+            <button type="button" onClick={closeEditor} disabled={loading}>
+              Close
             </button>
-          )}
-          <button type="submit" disabled={loading}>
-            {form.id ? 'Update unit' : 'Add unit'}
-          </button>
-        </div>
-      </form>
+            <button type="submit" disabled={loading}>
+              {form.id ? 'Update unit' : 'Add unit'}
+            </button>
+          </div>
+        </form>
+      </div>
 
       <div className="admin-list">
         {units.map((unit) => (

@@ -31,6 +31,7 @@ The NCFE Level 2 Certificate System is a full-stack web application designed to 
 - **Admin Panel**: Full system administration including user management, course creation, and bulk operations
 - **Email Automation**: Automated notifications for user creation, password resets, and submissions
 - **Real-time Collaboration**: Current activities tracking and assignment management
+- **Responsive UI**: Mobile-friendly layouts for narrow screens (<430px)
 
 ## Features
 

@@ -4,6 +4,14 @@
 
 This document provides detailed documentation for all React components in the NCFE Level 2 Certificate System. Components are built with React 19.2 and use Ant Design for UI elements.
 
+## Recent UI/UX Updates (Feb 2026)
+
+- Responsive pass for <430px screens (stacked layouts, reduced spacing, scrollable wide tables).
+- Admin editors (Course/Unit/User) now open in a collapsible “blind” panel via Add/Edit actions.
+- Admin header controls align right and wrap cleanly on smaller screens.
+- Class roster search wraps with the header, and assessment chips wrap instead of overflowing.
+- Assessment report/feedback rendering now supports colored status labels in print views.
+
 ## Component Architecture
 
 ```
@@ -371,6 +379,7 @@ For each activity:
 - Auto-save draft functionality
 - Submit for marking
 - Load existing answers
+- Mobile: question row, toolbar, and reference inputs stack for narrow screens
 
 **TipTap Configuration:**
 ```javascript
@@ -713,26 +722,28 @@ const formatted = formatDateTime(activity.dateSubmitted);
   config: Object,                  // API configuration
   currentUser: Object,             // Admin user
   setSendSuccessMessage: Function, // Success notifications
-  setSendErrorMessage: Function    // Error notifications
+  setSendErrorMessage: Function,   // Error notifications
+  initialSection: string,          // Optional initial tab key
+  onSectionChange: Function        // Optional tab change callback
 }
 ```
 
 **State:**
 ```javascript
-- activeTab: string  // Current tab key
+- activeSection: string  // Current tab key
 ```
 
 **Tabs:**
-1. **"1"** - UserManager
-2. **"2"** - CourseManager  
-3. **"3"** - UnitManager
-4. **"4"** - CurrentActivityManager
-5. **"5"** - AssignUnit
+1. **roster** - Class roster (teacher/admin)
+2. **courses** - CourseManager (admin)
+3. **units** - UnitManager (admin)
+4. **assign** - AssignUnit (teacher/admin)
+5. **users** - UserManager (admin)
 
 **Features:**
-- Persistent tab state
-- Full-width layout
-- Passes config and message callbacks to children
+- Role-based tab visibility (teachers vs admins)
+- Active section can sync to App for menu highlighting
+- Roster search input wraps on small screens
 
 ---
 
@@ -752,7 +763,7 @@ const formatted = formatDateTime(activity.dateSubmitted);
 ```javascript
 - users: Array               // All users
 - editingUser: Object|null   // User being edited
-- isModalVisible: boolean    // Edit modal toggle
+- showEditor: boolean        // Collapsible editor toggle
 - isBulkModalVisible: boolean // Bulk upload modal
 - classCode: string          // For bulk upload
 - defaultPassword: string    // For bulk upload
@@ -769,7 +780,7 @@ const formatted = formatDateTime(activity.dateSubmitted);
 - Color-coded status badges
 
 **Create/Edit User:**
-- Modal form for user details
+- Collapsible editor panel (opens on Add/Edit)
 - Role selection (Student/Teacher/Admin)
 - Password input (hashed to MD5)
 - Avatar upload
@@ -782,6 +793,7 @@ const formatted = formatDateTime(activity.dateSubmitted);
 - Preview/validate before upload
 - Error reporting per row
 - All bulk-created users have `changeLogin` set to 1, forcing password change on first login
+- Header controls (filters + actions) align right and wrap on small screens
 
 **CSV Format:**
 ```csv
@@ -822,15 +834,16 @@ student2@example.com,Student Two,CS101
 ```javascript
 - courses: Array             // All courses
 - editingCourse: Object|null // Course being edited
-- isModalVisible: boolean    // Modal toggle
+- showEditor: boolean        // Collapsible editor toggle
 - isLoading: boolean         // Operations in progress
 ```
 
 **Features:**
 - Course list with name and description
-- Create new courses
+- Create new courses via Add button
 - Edit existing courses
 - Delete courses (cascade deletes units)
+- Editor panel remains hidden until Add/Edit
 
 **Form Fields:**
 - Name (required)
@@ -871,7 +884,7 @@ Modal.confirm({
 - courses: Array             // For course selection
 - editingUnit: Object|null   // Unit being edited
 - questions: Array           // Questions for unit
-- isModalVisible: boolean    // Modal toggle
+- showEditor: boolean        // Collapsible editor toggle
 - isLoading: boolean
 ```
 
@@ -888,6 +901,7 @@ Modal.confirm({
 - Dynamic question list
 - Add/remove questions
 - Question text editor
+- Editor panel remains hidden until Add/Edit
 
 **Question Structure:**
 ```javascript

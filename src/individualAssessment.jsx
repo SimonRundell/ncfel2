@@ -115,8 +115,16 @@ useEffect(() => {
     }
 
     const getAchievedStatus = (status) => {
-        if (status === 'PASSED' || status === 'COMPLETE') return 'ACHIEVED'
-        return 'NOT YET ACHIEVED'
+        const achieved = status === 'PASSED' || status === 'COMPLETE'
+        return {
+            className: achieved ? 'green' : 'red',
+            label: achieved ? 'ACHIEVED' : 'NOT YET ACHIEVED',
+        }
+    }
+
+    const renderAchievedStatusHtml = (status) => {
+        const { className, label } = getAchievedStatus(status)
+        return `<span class="${className}">${label}</span>`
     }
 
     const handlePrint = () => {
@@ -183,6 +191,8 @@ useEffect(() => {
                         font-family: 'Brush Script MT', cursive;
                         font-size: 1.5rem;
                     }
+                    .red { color: #b00020; font-weight: bold; }
+                    .green { color: #1b7f3a; font-weight: bold; }
                     @media print {
                         body { padding: 0; }
                         .no-print { display: none; }
@@ -202,7 +212,7 @@ useEffect(() => {
     }
 
     const generateReportHTML = () => {
-        const achievedStatus = getAchievedStatus(selectedAssessment?.status)
+        const achievedStatus = renderAchievedStatusHtml(selectedAssessment?.status)
         
         let questionsHTML = questions.map(question => {
             return `<th style="text-align: center; min-width: 50px;">${question.QuestionRef}</th>`
@@ -337,7 +347,7 @@ useEffect(() => {
                     onClick={() => handleAssessmentClick(ass)}
                     style={{ cursor: 'pointer' }}
                 >
-                    {ass.unitCode} | {ass.unitName} <span className="red">{ass.status}</span>
+                    {ass.unitCode} | {ass.unitName} |<span className="yellow">&nbsp;{ass.status}</span>
                 </span>
             ))}
         </div>
@@ -462,7 +472,13 @@ useEffect(() => {
                                         </tr>
                                         <tr>
                                             <td colSpan="4" style={{ border: '1px solid black', padding: '0.5rem' }}>
-                                                <strong>Has the learner achieved or not yet achieved?</strong> <span style={{ marginLeft: '1rem' }}>{getAchievedStatus(selectedAssessment?.status)}</span>
+                                                <strong>Has the learner achieved or not yet achieved?</strong>
+                                                <span
+                                                    style={{ marginLeft: '1rem' }}
+                                                    className={getAchievedStatus(selectedAssessment?.status).className}
+                                                >
+                                                    {getAchievedStatus(selectedAssessment?.status).label}
+                                                </span>
                                             </td>
                                         </tr>
                                         <tr>

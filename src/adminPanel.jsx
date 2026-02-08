@@ -16,11 +16,19 @@ import { normalizeListResponse } from './adminApiHelpers';
  *  currentUser: object,
  *  setSendSuccessMessage: (msg: string) => void,
  *  setSendErrorMessage: (msg: string) => void,
- *  initialSection?: string
+ *  initialSection?: string,
+ *  onSectionChange?: (section: string) => void
  * }} props
  * @returns {JSX.Element}
  */
-function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMessage, initialSection = 'roster' }) {
+function AdminPanel({
+    config,
+    currentUser,
+    setSendSuccessMessage,
+    setSendErrorMessage,
+    initialSection = 'roster',
+    onSectionChange,
+}) {
     const [activeSection, setActiveSection] = useState(initialSection);
     const [classCodes, setClassCodes] = useState([]);
     const [students, setStudents] = useState([]);
@@ -108,13 +116,20 @@ function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMe
     useEffect(() => {
         if (initialSection && sections.some((section) => section.key === initialSection)) {
             setActiveSection(initialSection);
-            return;
         }
+    }, [initialSection, sections]);
 
+    useEffect(() => {
         if (!sections.some((section) => section.key === activeSection)) {
             setActiveSection(sections[0]?.key || 'roster');
         }
-    }, [activeSection, initialSection, sections]);
+    }, [activeSection, sections]);
+
+    useEffect(() => {
+        if (onSectionChange && sections.some((section) => section.key === activeSection)) {
+            onSectionChange(activeSection);
+        }
+    }, [activeSection, onSectionChange, sections]);
 
     return (
         <div className="admin-panel">
@@ -161,7 +176,7 @@ function AdminPanel({ config, currentUser, setSendSuccessMessage, setSendErrorMe
 
                     {students.length > 0 && (
                         <div>
-                            <h3>Students of {selectedClass}:
+                            <h3 className="roster-header">Students of {selectedClass}:
                             <span className="biggergap">
                             <input
                                 type="text"

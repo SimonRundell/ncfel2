@@ -310,20 +310,27 @@ const AssessmentReport = ({ config, currentUser, onError }) => {
                 </tr>
               </thead>
               <tbody>
-                {displayRows.map((row, idx) => (
-                  <tr key={`${row.studentId}-${row.unitLabel}-${idx}`}>
-                    <td>{row.displayName}</td>
-                    <td>{row.classCode || '—'}</td>
-                    <td>{row.courseLabel}</td>
-                    <td>{row.unitLabel}</td>
-                    <td>{row.status}</td>
-                    <td>{formatDateTime(row.dateSet)}</td>
-                    <td>{formatDateTime(row.dateSubmitted)}</td>
-                    <td>{formatDateTime(row.dateResubmitted)}</td>
-                    <td>{formatDateTime(row.dateMarked)}</td>
-                    <td>{formatDateTime(row.dateComplete)}</td>
-                  </tr>
-                ))}
+                {displayRows.map((row, idx) => {
+                  const statusClass = 
+                    row.status === 'PASSED' ? 'green' :
+                    row.status === 'NOTPASSED' ? 'red' :
+                    'yellow';
+                  
+                  return (
+                    <tr key={`${row.studentId}-${row.unitLabel}-${idx}`}>
+                      <td>{row.displayName}</td>
+                      <td>{row.classCode || '—'}</td>
+                      <td>{row.courseLabel}</td>
+                      <td>{row.unitLabel}</td>
+                      <td className={statusClass}>{row.status}</td>
+                      <td>{formatDateTime(row.dateSet)}</td>
+                      <td>{formatDateTime(row.dateSubmitted)}</td>
+                      <td>{formatDateTime(row.dateResubmitted)}</td>
+                      <td>{formatDateTime(row.dateMarked)}</td>
+                      <td>{formatDateTime(row.dateComplete)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
