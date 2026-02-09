@@ -1,4 +1,4 @@
-<h2>This software is in testing.</h2>
+<h2>This software is in the initial testing phase.</h2>
 If you discover a bug or have any suggestions then please log them at 
 <span class="assessment-tag">
 <a href="https://forms.microsoft.com/e/mJz03z0AUb">

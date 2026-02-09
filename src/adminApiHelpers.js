@@ -27,7 +27,8 @@ export const normalizeListResponse = (payload) => {
           return parsed.data;
         }
       } catch {
-        // Swallow parse errors and fall through
+        // Swallow parse errors and fall through with log to console to help debug
+        console.log(payload);
       }
     }
   }

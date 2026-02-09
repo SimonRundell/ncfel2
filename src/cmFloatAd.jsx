@@ -52,6 +52,7 @@ function CMFloatAd({color = '#ffffff', bgColor = '#242424'}) {
         width: '100%',
         border: '1px solid #747474',
         paddingRight: isMobile ? '10px' : '40px',
+        zIndex: '100',
       } : {};
 
       // Mobile-specific styles for content

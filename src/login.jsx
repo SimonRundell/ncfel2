@@ -136,7 +136,7 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
     // Convert email to lowercase for case-insensitive login
     const JSONData = { email: email.toLowerCase(), passwordHash: hashedPassword };
 
-    console.log("Sending:", JSONData);
+    // console.log("Sending:", JSONData);
 
     try {
       const response = await axios.post(config.api + '/getLogin.php', JSONData, {
@@ -146,7 +146,7 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
       });
 
       const data = response.data;
-      console.log('Response:', data);
+      // console.log('Response:', data);
 
       // Handle the response data here
       if (data.status_code === 200) {
@@ -157,13 +157,13 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
           // setSendSuccessMessage('Login successful');
           setIsLoading(false);
         } else {
-          setSendErrorMessage('User not found');
+          setSendErrorMessage('User not found - check you have spelled your email correctly');
           setIsLoading(false);
         }
       } else {
         // Login failed
 
-        setSendErrorMessage('Login failed');
+        setSendErrorMessage('Login failed - check your password or request a new one');
         setIsLoading(false);
       }
     } catch (error) {
@@ -278,19 +278,19 @@ const Login = ({ config, setCurrentUser, setSendSuccessMessage, setSendErrorMess
                   <p style={{ marginBottom: '10px' }}>
                     Enter your email above and click below to request a password reset from your teacher.
                   </p>
-                  <button 
+                  <div><button 
                     type="button"
                     onClick={handlePasswordReset}
                     style={{ marginRight: '10px' }}
                   >
                     Request Password Reset
-                  </button>
-                  <button 
+                  </button></div>
+                  <div className="biggertopgap"><button 
                     type="button"
                     onClick={() => setShowPasswordReset(false)}
                   >
                     Cancel
-                  </button>
+                  </button></div>
                 </div>
               )}
             </div>

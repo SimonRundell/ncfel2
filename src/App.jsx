@@ -162,9 +162,7 @@ function App() {
 useEffect(() => {
     if (sendSuccessMessage) {
        messageApi.success(sendSuccessMessage);
-    }
-      // setSendSuccessMessage(false);
-    
+    }   
   }, [sendSuccessMessage, messageApi]);
 
   useEffect(() => {
@@ -180,7 +178,7 @@ useEffect(() => {
       <div className="app-header">
         <div className="header-row">
           <img className="logo" src="images/ncfe.png" alt="NCFE Logo" />
-          <div className="app-title">Level 2 Certificate</div>
+          <div className="app-title">Level 2 Assessment</div>
           <img className="logo" src="images/exeter_logo.png" alt="Exeter College" />
         </div>
       </div>

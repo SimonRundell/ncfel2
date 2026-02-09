@@ -7,6 +7,224 @@ import { normalizeListResponse } from './adminApiHelpers';
 
 const BLOCKED_MESSAGE_TIMEOUT = 1200;
 
+const icons = {
+  bold: <img src="/images/bold.png" alt="Bold" width="28" height="28" />,
+  italic: <img src="/images/italic.png" alt="Italic" width="28" height="28" />,
+  bullet: <img src="/images/unorderedlist.png" alt="Bullet list" width="28" height="28" />,
+  ordered: <img src="/images/orderedlist.png" alt="Ordered list" width="28" height="28" />,
+  undo: <img src="/images/undo.png" alt="Undo" width="28" height="28" />,
+  redo: <img src="/images/redo.png" alt="Redo" width="28" height="28" />,
+};
+
+const ToolbarButton = ({ icon, label, isActive, onClick, disabled }) => (
+  <button
+    type="button"
+    className={`answer-toolbar-button${isActive ? ' active' : ''}`}
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={label}
+    title={label}
+  >
+    {icon}
+  </button>
+);
+
+const QuestionAnswerItem = ({
+  question,
+  savedAnswer,
+  disabled,
+  outcome,
+  comment,
+  refs,
+  onRefChange,
+  onAddRef,
+  onRemoveRef,
+  refValidation,
+  activityStatus,
+  questionStorageKey,
+  showBlocked,
+  editorsRef,
+}) => {
+  const saveTimer = useRef(null);
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: 'Type your answer here…',
+        emptyEditorClass: 'is-editor-empty',
+      }),
+    ],
+    content: savedAnswer || '',
+    editable: !disabled,
+    onUpdate: ({ editor: ed }) => {
+      const json = ed.getJSON();
+      const str = JSON.stringify(json);
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        localStorage.setItem(questionStorageKey(question.id), str);
+      }, 250);
+    },
+    editorProps: {
+      handleDOMEvents: {
+        copy: (_, event) => {
+          event.preventDefault();
+          showBlocked('copy blocked');
+          return true;
+        },
+        cut: (_, event) => {
+          event.preventDefault();
+          showBlocked('cut blocked');
+          return true;
+        },
+        paste: (_, event) => {
+          event.preventDefault();
+          showBlocked('paste blocked');
+          return true;
+        },
+        drop: (_, event) => {
+          event.preventDefault();
+          showBlocked('drop blocked');
+          return true;
+        },
+        contextmenu: () => {
+          showBlocked('context menu blocked');
+          return false;
+        },
+      },
+      handlePaste: () => true,
+      handleDrop: () => true,
+      handleKeyDown: (_, event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
+          event.preventDefault();
+          showBlocked('keyboard paste blocked');
+          return true;
+        }
+        return false;
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (editor) {
+      editorsRef.current[question.id] = editor;
+    }
+    return () => {
+      delete editorsRef.current[question.id];
+    };
+  }, [editor, question.id, editorsRef]);
+
+  useEffect(() => {
+    if (!disabled) return;
+    if (editor) editor.setEditable(false);
+  }, [disabled, editor]);
+
+  useEffect(() => {
+    if (!editor) return;
+    if (savedAnswer) {
+      editor.commands.setContent(savedAnswer);
+    } else {
+      editor.commands.clearContent(true);
+    }
+  }, [savedAnswer, editor]);
+
+  return (
+    <div className="qa-block">
+      <div className="qa-question">
+        <span className="question-ref">{question.QuestionRef || `Q${question.id}`}</span>
+        <span className="question-text" dangerouslySetInnerHTML={{ __html: question.Question }} />
+      </div>
+      <div className="qa-answer">
+        <div className="answer-toolbar">
+          <ToolbarButton
+            icon={icons.bold}
+            label="Bold"
+            isActive={editor?.isActive('bold')}
+            onClick={() => editor?.chain().focus().toggleBold().run()}
+            disabled={!editor || disabled}
+          />
+          <ToolbarButton
+            icon={icons.italic}
+            label="Italic"
+            isActive={editor?.isActive('italic')}
+            onClick={() => editor?.chain().focus().toggleItalic().run()}
+            disabled={!editor || disabled}
+          />
+          <ToolbarButton
+            icon={icons.bullet}
+            label="Bullet list"
+            isActive={editor?.isActive('bulletList')}
+            onClick={() => editor?.chain().focus().toggleBulletList().run()}
+            disabled={!editor || disabled}
+          />
+          <ToolbarButton
+            icon={icons.ordered}
+            label="Numbered list"
+            isActive={editor?.isActive('orderedList')}
+            onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+            disabled={!editor || disabled}
+          />
+          <ToolbarButton
+            icon={icons.undo}
+            label="Undo"
+            onClick={() => editor?.chain().focus().undo().run()}
+            disabled={!editor || disabled}
+          />
+          <ToolbarButton
+            icon={icons.redo}
+            label="Redo"
+            onClick={() => editor?.chain().focus().redo().run()}
+            disabled={!editor || disabled}
+          />
+        </div>
+        <div className="answer-editor">
+          <EditorContent editor={editor} />
+        </div>
+        <div className="admin-label">
+          References (optional, up to 5)
+          <div className="references-group">
+            {(refs || ['']).map((ref, idx) => (
+              <div className="reference-row" key={`ref-${question.id}-${idx}`}>
+                <input
+                  className="reference-input"
+                  type="url"
+                  value={ref}
+                  onChange={(e) => onRefChange(idx, e.target.value)}
+                  placeholder="https://example.com/article"
+                  disabled={disabled}
+                />
+                {(refs || ['']).length > 1 && !disabled && (
+                  <button
+                    type="button"
+                    className="reference-remove"
+                    onClick={() => onRemoveRef(idx)}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            <div className="reference-actions">
+              <button
+                type="button"
+                className="reference-add"
+                onClick={onAddRef}
+                disabled={disabled || (refs?.length ?? 1) >= 5}
+              >
+                + Add reference
+              </button>
+              <div className="reference-note">Enter full URLs; up to five references.</div>
+            </div>
+          </div>
+          {refValidation && <div className="answer-meta">{refValidation}</div>}
+          {outcome && activityStatus !== 'INPROGRESS' && (
+            <div className="answer-meta">Outcome: {outcome}{comment ? ` · ${comment}` : ''}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /**
  * Student answer workspace for a specific activity.
  * Loads questions, manages rich-text editors, persists drafts locally, submits answers, and tracks outcomes/comments.
@@ -430,209 +648,6 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
   //   setStatusText('IN PROGRESS · Draft cleared');
   // };
 
-  const icons = {
-    bold: <img src="/images/bold.png" alt="Bold" width="28" height="28" />,
-    italic: <img src="/images/italic.png" alt="Italic" width="28" height="28" />,
-    bullet: <img src="/images/unorderedlist.png" alt="Bullet list" width="28" height="28" />,
-    ordered: <img src="/images/orderedlist.png" alt="Ordered list" width="28" height="28" />,
-    undo: <img src="/images/undo.png" alt="Undo" width="28" height="28" />,
-    redo: <img src="/images/redo.png" alt="Redo" width="28" height="28" />,
-  };
-
-  const ToolbarButton = ({ icon, label, isActive, onClick, disabled }) => (
-    <button
-      type="button"
-      className={`answer-toolbar-button${isActive ? ' active' : ''}`}
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      title={label}
-    >
-      {icon}
-    </button>
-  );
-
-  const QuestionAnswerItem = ({ question, disabled, outcome, comment }) => {
-    const saved = answers[question.id];
-    const saveTimer = useRef(null);
-    const editor = useEditor({
-      extensions: [
-        StarterKit,
-        Placeholder.configure({
-          placeholder: 'Type your answer here…',
-          emptyEditorClass: 'is-editor-empty',
-        }),
-      ],
-      content: saved || '',
-      editable: !disabled,
-      onUpdate: ({ editor: ed }) => {
-        const json = ed.getJSON();
-        const str = JSON.stringify(json);
-        if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => {
-          localStorage.setItem(questionStorageKey(question.id), str);
-        }, 250);
-      },
-      editorProps: {
-        handleDOMEvents: {
-          copy: (_, event) => {
-            event.preventDefault();
-            showBlocked('copy blocked');
-            return true;
-          },
-          cut: (_, event) => {
-            event.preventDefault();
-            showBlocked('cut blocked');
-            return true;
-          },
-          paste: (_, event) => {
-            event.preventDefault();
-            showBlocked('paste blocked');
-            return true;
-          },
-          drop: (_, event) => {
-            event.preventDefault();
-            showBlocked('drop blocked');
-            return true;
-          },
-          contextmenu: () => {
-            showBlocked('context menu blocked');
-            return false;
-          },
-        },
-        handlePaste: () => true,
-        handleDrop: () => true,
-        handleKeyDown: (_, event) => {
-          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
-            event.preventDefault();
-            showBlocked('keyboard paste blocked');
-            return true;
-          }
-          return false;
-        },
-      },
-    });
-
-    useEffect(() => {
-      if (editor) {
-        editorsRef.current[question.id] = editor;
-      }
-      return () => {
-        delete editorsRef.current[question.id];
-      };
-    }, [editor, question.id]);
-
-    useEffect(() => {
-      if (!disabled) return;
-      if (editor) editor.setEditable(false);
-    }, [disabled, editor]);
-
-    useEffect(() => {
-      if (!editor) return;
-      if (saved) {
-        editor.commands.setContent(saved);
-      } else {
-        editor.commands.clearContent(true);
-      }
-    }, [saved, editor]);
-
-    return (
-      <div className="qa-block">
-        <div className="qa-question">
-          <span className="question-ref">{question.QuestionRef || `Q${question.id}`}</span>
-          <span className="question-text" dangerouslySetInnerHTML={{ __html: question.Question }} />
-        </div>
-        <div className="qa-answer">
-          <div className="answer-toolbar">
-            <ToolbarButton
-              icon={icons.bold}
-              label="Bold"
-              isActive={editor?.isActive('bold')}
-              onClick={() => editor?.chain().focus().toggleBold().run()}
-              disabled={!editor || disabled}
-            />
-            <ToolbarButton
-              icon={icons.italic}
-              label="Italic"
-              isActive={editor?.isActive('italic')}
-              onClick={() => editor?.chain().focus().toggleItalic().run()}
-              disabled={!editor || disabled}
-            />
-            <ToolbarButton
-              icon={icons.bullet}
-              label="Bullet list"
-              isActive={editor?.isActive('bulletList')}
-              onClick={() => editor?.chain().focus().toggleBulletList().run()}
-              disabled={!editor || disabled}
-            />
-            <ToolbarButton
-              icon={icons.ordered}
-              label="Numbered list"
-              isActive={editor?.isActive('orderedList')}
-              onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-              disabled={!editor || disabled}
-            />
-            <ToolbarButton
-              icon={icons.undo}
-              label="Undo"
-              onClick={() => editor?.chain().focus().undo().run()}
-              disabled={!editor || disabled}
-            />
-            <ToolbarButton
-              icon={icons.redo}
-              label="Redo"
-              onClick={() => editor?.chain().focus().redo().run()}
-              disabled={!editor || disabled}
-            />
-          </div>
-          <div className="answer-editor">
-            <EditorContent editor={editor} />
-          </div>
-          <div className="admin-label">
-            References (optional, up to 5)
-            <div className="references-group">
-              {(refsMap[question.id] || ['']).map((ref, idx) => (
-                <div className="reference-row" key={`ref-${question.id}-${idx}`}>
-                  <input
-                    className="reference-input"
-                    type="url"
-                    value={ref}
-                    onChange={(e) => handleRefChange(question.id, idx, e.target.value)}
-                    placeholder="https://example.com/article"
-                    disabled={disabled}
-                  />
-                  {(refsMap[question.id] || ['']).length > 1 && !disabled && (
-                    <button
-                      type="button"
-                      className="reference-remove"
-                      onClick={() => removeReferenceField(question.id, idx)}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <div className="reference-actions">
-                <button
-                  type="button"
-                  className="reference-add"
-                  onClick={() => addReferenceField(question.id)}
-                  disabled={disabled || (refsMap[question.id]?.length ?? 1) >= 5}
-                >
-                  + Add reference
-                </button>
-                <div className="reference-note">Enter full URLs; up to five references.</div>
-              </div>
-            </div>
-            {validateRefs(question.id) && <div className="answer-meta">{validateRefs(question.id)}</div>}
-            {outcome && activityStatus !== 'INPROGRESS' && (
-              <div className="answer-meta">Outcome: {outcome}{comment ? ` · ${comment}` : ''}</div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const isQuestionEditable = (qid) => {
     const lockedStatuses = [
@@ -697,9 +712,19 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
                   <QuestionAnswerItem
                     key={q.id}
                     question={q}
+                    savedAnswer={answers[q.id]}
                     disabled={!isQuestionEditable(q.id)}
                     outcome={outcomes[q.id]}
                     comment={markerComments[q.id]}
+                    refs={refsMap[q.id]}
+                    onRefChange={(idx, value) => handleRefChange(q.id, idx, value)}
+                    onAddRef={() => addReferenceField(q.id)}
+                    onRemoveRef={(idx) => removeReferenceField(q.id, idx)}
+                    refValidation={validateRefs(q.id)}
+                    activityStatus={activityStatus}
+                    questionStorageKey={questionStorageKey}
+                    showBlocked={showBlocked}
+                    editorsRef={editorsRef}
                   />
                 ))}
               </div>
