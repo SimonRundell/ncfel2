@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -58,6 +58,8 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
   const [assessorComment, setAssessorComment] = useState(DEFAULT_ASSESSOR_COMMENT);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fileUploads, setFileUploads] = useState({});
+  const [lightbox, setLightbox] = useState(null);
 
   const isTeacher = currentUser?.status === 2;
   const isAdmin = currentUser?.status === 3;
@@ -134,6 +136,26 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
     return students.map((s) => s.id);
   }, [isAdmin, students]);
 
+  const buildFileUrl = useCallback(
+    (questionId, fileId, activity) => {
+      const target = activity || selectedSubmission;
+      if (!config?.api || !target?.id || !target?.studentId || !fileId) return '';
+      return `${config.api}/downloadAnswerFile.php?activityId=${target.id}&studentId=${target.studentId}&questionId=${questionId}&fileId=${encodeURIComponent(fileId)}`;
+    },
+    [config?.api, selectedSubmission]
+  );
+
+  const normalizeUploads = useCallback(
+    (uploads, questionId, activity) => {
+      if (!Array.isArray(uploads)) return [];
+      return uploads.map((u) => ({ ...u, url: u?.url || buildFileUrl(questionId, u?.id, activity) }));
+    },
+    [buildFileUrl]
+  );
+
+  const openLightbox = useCallback((src, alt) => setLightbox({ src, alt }), []);
+  const closeLightbox = useCallback(() => setLightbox(null), []);
+
   const relevantActivities = useMemo(() => {
     const allowedStatuses = [...READY_STATUSES, ...MARKING_STATUSES];
     return activities.filter((act) => {
@@ -164,6 +186,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
     setAnswers({});
     setOutcomes({});
     setComments({});
+    setFileUploads({});
   }, [selectedUnitId]);
 
   const loadSubmissionDetail = async (activity) => {
@@ -185,13 +208,27 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
       ]);
 
       const qs = normalizeListResponse(questionsRes.data);
-      setQuestions(Array.isArray(qs) ? qs : []);
+      const normalizedQs = Array.isArray(qs)
+        ? qs.map((q) => ({
+            ...q,
+            uploadPermitted: Number(q?.uploadPermitted ?? q?.uploadpermitted ?? 0) === 1,
+          }))
+        : [];
+      setQuestions(normalizedQs);
 
       const answersPayload = answersRes.data?.data || {};
       setAnswers(answersPayload.answers || {});
       setOutcomes(answersPayload.outcomes || {});
       setComments(answersPayload.comments || {});
       setAssessorComment(answersPayload.assessorComment || DEFAULT_ASSESSOR_COMMENT);
+      const uploadsFromServer = answersPayload.fileUploads || {};
+      setFileUploads(() => {
+        const mapped = {};
+        Object.keys(uploadsFromServer).forEach((qid) => {
+          mapped[qid] = normalizeUploads(uploadsFromServer[qid], qid, activity);
+        });
+        return mapped;
+      });
 
       if (READY_STATUSES.includes(activity.status)) {
         const nextStatus = activity.status === 'SUBMITTED' ? 'INMARKING' : 'INREMARKING';
@@ -280,6 +317,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
       setAnswers({});
       setOutcomes({});
       setComments({});
+      setFileUploads({});
       setAssessorComment(DEFAULT_ASSESSOR_COMMENT);
 
       const refreshed = await axios.get(`${config.api}/getCurrentActivities.php`, {
@@ -364,7 +402,14 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
               <div className="marking-workspace-meta">Current status: {selectedSubmission.status}</div>
             </div>
             <div className="marking-workspace-actions">
-              <button type="button" onClick={() => setSelectedSubmission(null)} disabled={saving || loading}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedSubmission(null);
+                  setFileUploads({});
+                }}
+                disabled={saving || loading}
+              >
                 Close
               </button>
               <button type="button" onClick={saveMarking} disabled={saving || loading || questions.length === 0}>
@@ -384,6 +429,51 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
               <div className="marking-answer-box">
                 <AnswerPreview content={answers[q.id]} />
               </div>
+              {q.uploadPermitted ? (
+                <div className="upload-section readonly">
+                  <div className="upload-header">Attachments</div>
+                  <div className="upload-list">
+                    {(!fileUploads[q.id] || fileUploads[q.id].length === 0) && (
+                      <div className="answer-meta">No files uploaded.</div>
+                    )}
+                    {fileUploads[q.id]?.map((file) => {
+                      const label = file?.originalName || file?.id || 'File';
+                      const url = file?.url || buildFileUrl(q.id, file?.id, selectedSubmission);
+                      const nameLower = label.toLowerCase();
+                      const isImg = nameLower.endsWith('.png') || nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg') || nameLower.endsWith('.gif');
+                      return (
+                        <div className="upload-chip" key={`${q.id}-${file?.id || label}`}>
+                          {isImg ? (
+                            <button
+                              type="button"
+                              className="upload-thumb"
+                              onClick={() => (url ? openLightbox(url, label) : null)}
+                              disabled={!url}
+                              aria-label={`Preview ${label}`}
+                            >
+                              {url ? <img src={url} alt={label} /> : <span>No preview</span>}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="upload-doc"
+                              onClick={() => url && window.open(url, '_blank')}
+                              disabled={!url}
+                            >
+                              {label}
+                            </button>
+                          )}
+                          {url && (
+                            <a className="upload-download" href={url} target="_blank" rel="noreferrer">
+                              Download
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
               <div className="marking-controls">
                 <label className="marking-toggle">
                   <input
@@ -424,6 +514,20 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {lightbox && (
+        <div className="lightbox-backdrop" onClick={closeLightbox}>
+          <div className="lightbox-body" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="lightbox-close" onClick={closeLightbox}>
+              Close
+            </button>
+            <div className="lightbox-image-wrap">
+              <img src={lightbox.src} alt={lightbox.alt || 'Attachment'} />
+            </div>
+            {lightbox.alt && <div className="lightbox-caption">{lightbox.alt}</div>}
+          </div>
         </div>
       )}
     </div>

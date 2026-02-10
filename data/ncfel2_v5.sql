@@ -32,10 +32,10 @@ CREATE TABLE `answers`  (
   `references` json NULL COMMENT 'json of references',
   `status` enum('NOTSET','INPROGRESS','SUBMITTED','INMARKING','REDOING','RESUBMITTED','INREMARKING','PASSED','NOTPASSED','DISCONTINUED') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'NOTSET',
   `updatedAt` datetime NULL DEFAULT NULL,
+  `fileUploads` json NULL COMMENT 'json of fileuploads',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uq_answers_activity_student_question`(`activityId` ASC, `studentId` ASC, `questionId` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 179 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
-
+) ENGINE = InnoDB AUTO_INCREMENT = 200 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 -- ----------------------------
 -- Records of answers
 -- ----------------------------
@@ -173,6 +173,7 @@ CREATE TABLE `questions`  (
   `unitid` tinyint(1) NULL DEFAULT NULL,
   `QuestionRef` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `Question` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `uploadPermitted` tinyint UNSIGNED NOT NULL DEFAULT 0 COMMENT '0 = no upload permitted 1 = uploads permitted',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 99 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 

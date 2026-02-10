@@ -8,7 +8,7 @@ if ($activityId === null || $studentId === null) {
     send_response('Missing activityId or studentId', 400);
 }
 
-$stmt = $mysqli->prepare('SELECT questionId, answer, `references`, status, outcome, comment, updatedAt FROM answers WHERE activityId = ? AND studentId = ? ORDER BY questionId');
+$stmt = $mysqli->prepare('SELECT questionId, answer, `references`, status, outcome, comment, updatedAt, fileUploads FROM answers WHERE activityId = ? AND studentId = ? ORDER BY questionId');
 if (!$stmt) {
     log_info('Prepare failed: ' . $mysqli->error);
     send_response('Database error', 500);
@@ -26,18 +26,21 @@ $references = [];
 $status = 'INPROGRESS';
 $outcomes = [];
 $comments = [];
+$fileUploads = [];
 $assessorComment = '';
 
 while ($row = $result->fetch_assoc()) {
     $questionId = (int) $row['questionId'];
     $decodedAnswer = json_decode($row['answer'], true);
     $decodedRefs = json_decode($row['references'], true);
+    $decodedUploads = json_decode($row['fileUploads'] ?? '', true);
 
     $answers[$questionId] = $decodedAnswer !== null ? $decodedAnswer : $row['answer'];
     $references[$questionId] = is_array($decodedRefs) ? $decodedRefs : [];
     $status = $row['status'] ?: $status;
     $outcomes[$questionId] = $row['outcome'] ?: 'NOT ACHIEVED';
     $comments[$questionId] = $row['comment'] ?? '';
+    $fileUploads[$questionId] = is_array($decodedUploads) ? $decodedUploads : [];
 }
 
 $activityStmt = $mysqli->prepare('SELECT assessorComment FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
@@ -57,6 +60,7 @@ send_response(['data' => [
     'status' => $status,
     'outcomes' => $outcomes,
     'comments' => $comments,
+    'fileUploads' => $fileUploads,
     'assessorComment' => $assessorComment,
 ]]);
 ?>

@@ -6,6 +6,7 @@ $activityId = $receivedData['activityId'] ?? null;
 $studentId = $receivedData['studentId'] ?? null;
 $answers = $receivedData['answers'] ?? null; // expected map: questionId => answer JSON
 $references = $receivedData['references'] ?? []; // expected map: questionId => [urls]
+$fileUploads = $receivedData['fileUploads'] ?? null; // expected map: questionId => [file metadata]
 $incomingStatus = $receivedData['status'] ?? 'DRAFT';
 // answers.status enum currently does not include DRAFT; map DRAFT to INPROGRESS so inserts succeed.
 $status = $incomingStatus === 'DRAFT' ? 'INPROGRESS' : $incomingStatus;
@@ -19,8 +20,8 @@ log_info('saveAnswers using database ' . ($config['dbname'] ?? 'unknown'));
 
 // Upsert one row per question so we retain questionId linkage.
 // Expect a unique key on (activityId, questionId, studentId) in the answers table.
-$query = 'INSERT INTO answers (activityId, studentId, questionId, answer, `references`, status, updatedAt) VALUES (?, ?, ?, ?, ?, ?, NOW()) ' .
-         'ON DUPLICATE KEY UPDATE answer = VALUES(answer), `references` = VALUES(`references`), status = VALUES(status), updatedAt = VALUES(updatedAt)';
+$query = 'INSERT INTO answers (activityId, studentId, questionId, answer, `references`, status, updatedAt, fileUploads) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?) ' .
+         'ON DUPLICATE KEY UPDATE answer = VALUES(answer), `references` = VALUES(`references`), status = VALUES(status), fileUploads = IFNULL(VALUES(fileUploads), fileUploads), updatedAt = VALUES(updatedAt)';
 
 $stmt = $mysqli->prepare($query);
 
@@ -29,16 +30,20 @@ if (!$stmt) {
     send_response('Prepare failed: ' . $mysqli->error, 500);
 }
 
+$referencesMap = is_array($references) ? $references : [];
+$fileUploadsMap = is_array($fileUploads) ? $fileUploads : [];
 $saved = 0;
 foreach ($answers as $questionId => $answerContent) {
     $qid = (int) $questionId;
     $answerJson = is_string($answerContent) ? $answerContent : json_encode($answerContent);
-    $refList = $references[$questionId] ?? [];
-    $refsJson = json_encode($refList);
+    $refList = $referencesMap[$questionId] ?? [];
+    $uploadsForQuestion = array_key_exists($questionId, $fileUploadsMap) ? $fileUploadsMap[$questionId] : null;
+    $refsJson = json_encode(is_array($refList) ? $refList : []);
+    $uploadsJson = is_array($uploadsForQuestion) ? json_encode($uploadsForQuestion) : null;
 
-    log_info('saveAnswers begin question ' . $qid . ' answerLen=' . strlen($answerJson) . ' refsCount=' . count($refList));
+    log_info('saveAnswers begin question ' . $qid . ' answerLen=' . strlen($answerJson) . ' refsCount=' . count($refList) . ' uploads=' . ($uploadsForQuestion === null ? 'kept' : count((array)$uploadsForQuestion)));
 
-    $stmt->bind_param('iiisss', $activityId, $studentId, $qid, $answerJson, $refsJson, $status);
+    $stmt->bind_param('iiissss', $activityId, $studentId, $qid, $answerJson, $refsJson, $status, $uploadsJson);
 
     if (!$stmt->execute()) {
         log_info('Execute failed for question ' . $qid . ': ' . $stmt->error);

@@ -44,6 +44,11 @@ const QuestionAnswerItem = ({
   questionStorageKey,
   showBlocked,
   editorsRef,
+  uploads,
+  onUploadFiles,
+  onDeleteFile,
+  uploading,
+  onOpenLightbox,
 }) => {
   const saveTimer = useRef(null);
   const editor = useEditor({
@@ -126,6 +131,19 @@ const QuestionAnswerItem = ({
       editor.commands.clearContent(true);
     }
   }, [savedAnswer, editor]);
+
+  const isImageFile = (file) => {
+    const name = (file?.originalName || file?.id || '').toLowerCase();
+    return name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.gif');
+  };
+
+  const handleFileInputChange = (event) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    if (selectedFiles.length && onUploadFiles) {
+      onUploadFiles(selectedFiles);
+    }
+    event.target.value = '';
+  };
 
   return (
     <div className="qa-block">
@@ -219,6 +237,75 @@ const QuestionAnswerItem = ({
           {outcome && activityStatus !== 'INPROGRESS' && (
             <div className="answer-meta">Outcome: {outcome}{comment ? ` · ${comment}` : ''}</div>
           )}
+
+          {question.uploadPermitted ? (
+            <div className="upload-section">
+              <div className="upload-header">Attachments</div>
+              <div className="upload-actions">
+                <label className={`upload-button${disabled ? ' disabled' : ''}`}>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,image/gif,.doc,.docx,.xls,.xlsm,.pdf"
+                    onChange={handleFileInputChange}
+                    disabled={disabled || uploading}
+                  />
+                  {uploading ? 'Uploading…' : 'Upload files'}
+                </label>
+                <div className="upload-note">Images show as thumbnails; documents download.</div>
+              </div>
+
+              <div className="upload-list">
+                {(!uploads || uploads.length === 0) && (
+                  <div className="answer-meta">No files uploaded yet.</div>
+                )}
+                {uploads?.map((file) => {
+                  const isImg = isImageFile(file);
+                  const label = file?.originalName || file?.id || 'File';
+                  const url = file?.url || '';
+                  return (
+                    <div className="upload-chip" key={`${question.id}-${file?.id || label}`}>
+                      {isImg ? (
+                        <button
+                          type="button"
+                          className="upload-thumb"
+                          onClick={() => (url && onOpenLightbox ? onOpenLightbox(url, label) : null)}
+                          disabled={!url}
+                          aria-label={`Preview ${label}`}
+                        >
+                          {url ? <img src={url} alt={label} /> : <span>No preview</span>}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="upload-doc"
+                          onClick={() => url && window.open(url, '_blank')}
+                          disabled={!url}
+                        >
+                          {label}
+                        </button>
+                      )}
+                      {url && (
+                        <a className="upload-download" href={url} target="_blank" rel="noreferrer">
+                          Download
+                        </a>
+                      )}
+                      {!disabled && (
+                        <button
+                          type="button"
+                          className="upload-remove"
+                          onClick={() => onDeleteFile && onDeleteFile(file?.id)}
+                          disabled={uploading}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -256,11 +343,14 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
   const [outcomes, setOutcomes] = useState({}); // questionId -> outcome
   const [markerComments, setMarkerComments] = useState({}); // questionId -> marker comment
   const [assessorComment, setAssessorComment] = useState('');
+  const [fileUploads, setFileUploads] = useState({}); // questionId -> [uploads]
+  const [uploadingMap, setUploadingMap] = useState({}); // questionId -> bool
   const storageKey = useMemo(() => `answer-${activity?.id || 'unknown'}`, [activity?.id]);
   const refsKey = useMemo(() => `answer-refs-${activity?.id || 'unknown'}`, [activity?.id]);
   const blockTimer = useRef(null);
   const editorsRef = useRef({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -271,6 +361,32 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
   }, []);
 
   const questionStorageKey = useCallback((qid) => `${storageKey}-q-${qid}`, [storageKey]);
+
+  const buildFileUrl = useCallback(
+    (questionId, fileId) => {
+      if (!config?.api || !activity?.id || !activity?.studentId || !fileId) return '';
+      return `${config.api}/downloadAnswerFile.php?activityId=${activity.id}&studentId=${activity.studentId}&questionId=${questionId}&fileId=${encodeURIComponent(fileId)}`;
+    },
+    [config?.api, activity?.id, activity?.studentId]
+  );
+
+  const normalizeUploadsForQuestion = useCallback(
+    (uploads, questionId) => {
+      if (!Array.isArray(uploads)) return [];
+      return uploads.map((u) => ({ ...u, url: u?.url || buildFileUrl(questionId, u?.id) }));
+    },
+    [buildFileUrl]
+  );
+
+  const serializeFileUploads = useCallback(() => {
+    const payload = {};
+    Object.keys(fileUploads).forEach((qid) => {
+      const list = fileUploads[qid];
+      if (!Array.isArray(list)) return;
+      payload[qid] = list.map(({ url, ...rest }) => rest);
+    });
+    return payload;
+  }, [fileUploads]);
 
   useEffect(() => {
     const rawRefs = localStorage.getItem(refsKey);
@@ -321,7 +437,15 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
       });
       return next;
     });
-  }, [questions, questionStorageKey]);
+
+      setFileUploads((prev) => {
+        const next = { ...prev };
+        questions.forEach((q) => {
+          next[q.id] = normalizeUploadsForQuestion(next[q.id], q.id);
+        });
+        return next;
+      });
+  }, [questions, questionStorageKey, normalizeUploadsForQuestion]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -338,7 +462,13 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
           { headers: { 'Content-Type': 'application/json' } }
         );
         const data = normalizeListResponse(response.data);
-        setQuestions(Array.isArray(data) ? data : []);
+        const normalized = Array.isArray(data)
+          ? data.map((q) => ({
+              ...q,
+              uploadPermitted: Number(q?.uploadPermitted ?? q?.uploadpermitted ?? 0) === 1,
+            }))
+          : [];
+        setQuestions(normalized);
       } catch (err) {
         console.error('Error loading questions', err);
         setQuestionsError('Could not load questions');
@@ -410,6 +540,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         const serverOutcomes = payload.outcomes || {};
         const serverComments = payload.comments || {};
         const serverAssessorComment = payload.assessorComment || '';
+        const serverUploads = payload.fileUploads || {};
 
         if (!Object.keys(serverAnswers).length) return;
 
@@ -420,6 +551,13 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         setOutcomes(serverOutcomes);
         setMarkerComments(serverComments);
         setAssessorComment(serverAssessorComment);
+        setFileUploads((prev) => {
+          const next = { ...prev };
+          Object.keys(serverUploads).forEach((qid) => {
+            next[qid] = normalizeUploadsForQuestion(serverUploads[qid], qid);
+          });
+          return next;
+        });
         setRefsMap((prev) => {
           const next = { ...prev };
           Object.keys(serverRefs).forEach((qid) => {
@@ -437,7 +575,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     };
 
     fetchSavedAnswers();
-  }, [activity?.id, activity?.studentId, config?.api, storageKey, refsKey]);
+  }, [activity?.id, activity?.studentId, config?.api, storageKey, refsKey, normalizeUploadsForQuestion]);
 
   const displayStatus = (status) => {
     switch (status) {
@@ -512,6 +650,76 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     return bad.length ? `Invalid URLs: ${bad.join(', ')}` : 'URLs look valid';
   };
 
+  const handleFileUpload = async (questionId, files) => {
+    if (!config?.api || !activity?.id || !activity?.studentId || !Array.isArray(files) || files.length === 0) return;
+    setUploadingMap((prev) => ({ ...prev, [questionId]: true }));
+    try {
+      // Upload sequentially to simplify server logging and progress tracking
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('activityId', activity.id);
+        formData.append('studentId', activity.studentId);
+        formData.append('questionId', questionId);
+
+        const resp = await axios.post(`${config.api}/uploadAnswerFile.php`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        const uploaded = resp.data?.file;
+        const updatedList = resp.data?.fileUploads;
+        setFileUploads((prev) => {
+          const next = { ...prev };
+          if (Array.isArray(updatedList)) {
+            next[questionId] = normalizeUploadsForQuestion(updatedList, questionId);
+          } else if (uploaded) {
+            const list = Array.isArray(next[questionId]) ? next[questionId].slice() : [];
+            list.push({ ...uploaded, url: uploaded.url || buildFileUrl(questionId, uploaded.id) });
+            next[questionId] = list;
+          }
+          return next;
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading file', error);
+      if (onError) onError('Error uploading file');
+    } finally {
+      setUploadingMap((prev) => ({ ...prev, [questionId]: false }));
+    }
+  };
+
+  const handleFileDelete = async (questionId, fileId) => {
+    if (!config?.api || !activity?.id || !activity?.studentId || !fileId) return;
+    setUploadingMap((prev) => ({ ...prev, [questionId]: true }));
+    try {
+      const resp = await axios.post(
+        `${config.api}/deleteAnswerFile.php`,
+        {
+          activityId: activity.id,
+          studentId: activity.studentId,
+          questionId,
+          fileId,
+        },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      const updatedList = resp.data?.fileUploads;
+      setFileUploads((prev) => {
+        const next = { ...prev };
+        next[questionId] = normalizeUploadsForQuestion(updatedList, questionId);
+        return next;
+      });
+    } catch (error) {
+      console.error('Error deleting file', error);
+      if (onError) onError('Error deleting file');
+    } finally {
+      setUploadingMap((prev) => ({ ...prev, [questionId]: false }));
+    }
+  };
+
+  const openLightbox = useCallback((src, alt) => setLightbox({ src, alt }), []);
+  const closeLightbox = useCallback(() => setLightbox(null), []);
+
   const updateActivityStatus = async (status, extraFields = {}) => {
     if (!config?.api || !activity?.id || !activity?.studentId || !activity?.courseId || !activity?.unitId) return;
     await axios.post(
@@ -558,6 +766,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
           studentId: activity.studentId,
           answers: answersPayload,
           references: perQuestionRefs,
+          fileUploads: serializeFileUploads(),
           status: nextStatus,
         },
         { headers: { 'Content-Type': 'application/json' } }
@@ -606,6 +815,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         studentId: activity.studentId,
         answers: answersPayload,
         references: perQuestionRefs,
+        fileUploads: serializeFileUploads(),
         status: 'DRAFT',
       };
 
@@ -725,6 +935,11 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
                     questionStorageKey={questionStorageKey}
                     showBlocked={showBlocked}
                     editorsRef={editorsRef}
+                    uploads={fileUploads[q.id]}
+                    onUploadFiles={(files) => handleFileUpload(q.id, files)}
+                    onDeleteFile={(fileId) => handleFileDelete(q.id, fileId)}
+                    uploading={!!uploadingMap[q.id]}
+                    onOpenLightbox={openLightbox}
                   />
                 ))}
               </div>
@@ -765,6 +980,20 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
                   Confirm submit
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {lightbox && (
+          <div className="lightbox-backdrop" onClick={closeLightbox}>
+            <div className="lightbox-body" onClick={(e) => e.stopPropagation()}>
+              <button type="button" className="lightbox-close" onClick={closeLightbox}>
+                Close
+              </button>
+              <div className="lightbox-image-wrap">
+                <img src={lightbox.src} alt={lightbox.alt || 'Attachment'} />
+              </div>
+              {lightbox.alt && <div className="lightbox-caption">{lightbox.alt}</div>}
             </div>
           </div>
         )}
