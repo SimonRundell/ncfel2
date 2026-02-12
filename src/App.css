@@ -626,6 +626,56 @@ ADMIN
   flex-wrap: wrap;
 }
 
+.admin-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+  color: #e6e6e6;
+  margin-right: 0.35rem;
+}
+
+.admin-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-switch-track {
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-switch-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  transform: translateX(0);
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.admin-switch input:checked + .admin-switch-track {
+  background: #1c5f3a;
+  border-color: #247548;
+}
+
+.admin-switch input:checked + .admin-switch-track .admin-switch-thumb {
+  transform: translateX(18px);
+}
+
+.admin-switch-label {
+  font-size: 0.95rem;
+}
+
 .admin-list {
   margin-top: 1rem;
   border: 1px solid #2f2f2f;
@@ -1454,11 +1504,53 @@ MARKING DASHBOARD
   flex-wrap: wrap;
 }
 
-.marking-toggle {
+.marking-switch {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   font-weight: 600;
+  color: #f2f2f2;
+}
+
+.marking-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.marking-switch-track {
+  width: 46px;
+  height: 24px;
+  border-radius: 999px;
+  background: #7a2626;
+  border: 1px solid #8e2f2f;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.marking-switch-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f2f2f2;
+  transform: translateX(0);
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.marking-switch input:checked + .marking-switch-track {
+  background: #1c5f3a;
+  border-color: #247548;
+}
+
+.marking-switch input:checked + .marking-switch-track .marking-switch-thumb {
+  transform: translateX(20px);
+}
+
+.marking-switch-label {
+  font-size: 0.95rem;
 }
 
 .marking-comment {

@@ -114,6 +114,8 @@ GET /api/getQuestions.php
 GET /api/getAnswers.php
   ↓ (student works on answers)
 TipTap editor
+  ↓ (optional attachments)
+POST /api/uploadAnswerFile.php
   ↓ (student saves)
 POST /api/saveAnswers.php (status: DRAFT)
   ↓ (student submits)
@@ -174,11 +176,10 @@ Tab 2: CourseManager.jsx
   └─ CRUD operations on courses
 
 Tab 3: UnitManager.jsx
-  ├─ Manage units
-  └─ Edit questions (JSON array)
+  └─ Manage units
 
-Tab 4: CurrentActivityManager.jsx
-  └─ Manually assign units to students
+Tab 4: QuestionsManager.jsx
+  └─ Manage questions + uploadPermitted flag
 
 Tab 5: AssignUnit.jsx
   └─ Bulk assign unit to entire class
@@ -201,11 +202,13 @@ Tab 5: AssignUnit.jsx
 
 **Admin features:**
 10. `src/UserManager.jsx` - User CRUD
-11. `src/UnitManager.jsx` - Questions editor
-12. `api/bulkUploadUsers.php` - CSV import (sets changeLogin=1)
-13. `src/menu.jsx` - View switching navigation
-14. `src/AssessmentReport.jsx` - Printable overview
-15. `src/individualAssessment.jsx` - Student assessment history
+11. `src/UnitManager.jsx` - Unit CRUD
+12. `src/QuestionsManager.jsx` - Question CRUD + uploadPermitted
+13. `api/uploadAnswerFile.php` - Attachment uploads for answers
+14. `api/bulkUploadUsers.php` - CSV import (sets changeLogin=1)
+15. `src/menu.jsx` - View switching navigation
+16. `src/AssessmentReport.jsx` - Printable overview
+17. `src/individualAssessment.jsx` - Student assessment history
 
 ### Database Schema Mental Model
 
@@ -220,15 +223,20 @@ currentActivities (assignments)
   ↓
 unit (with questions as JSON)
   ↓
+questions (per-unit question bank)
+  - uploadPermitted flag controls student attachments
+  ↓
 answers (student responses with status)
   - outcome (ACHIEVED/NOT ACHIEVED)
   - comment (per question)
+  - fileUploads (JSON metadata for attachments)
 ```
 
 **Key Relationships:**
 - Each `currentActivity` links a `student` to a `unit`
 - Each `answer` belongs to an `activity` and references a `question` by ID
-- `questions` are stored as JSON array in `unit.questions`
+- Each question row belongs to a unit and is referenced by answers.questionId
+- Attachments are stored on disk and tracked in answers.fileUploads
 
 ### Common Tasks
 

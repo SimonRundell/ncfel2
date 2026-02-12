@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import CourseManager from './CourseManager.jsx';
 import UnitManager from './UnitManager.jsx';
+import QuestionsManager from './QuestionsManager.jsx';
 import UserManager from './UserManager.jsx';
 import AssignUnit from './AssignUnit.jsx';
 import IndividualAssessment from './individualAssessment.jsx';
@@ -102,6 +103,7 @@ function AdminPanel({
             { key: 'roster', label: 'Class roster' },
             { key: 'courses', label: 'Courses' },
             { key: 'units', label: 'Units' },
+            { key: 'questions', label: 'Questions' },
             { key: 'assign', label: 'Set Assessments' },
             { key: 'users', label: 'Users' },
         ];
@@ -220,6 +222,10 @@ function AdminPanel({
 
             {activeSection === 'units' && (
                 <UnitManager config={config} onSuccess={notifySuccess} onError={notifyError} />
+            )}
+
+            {activeSection === 'questions' && (
+                <QuestionsManager config={config} onSuccess={notifySuccess} onError={notifyError} />
             )}
 
             {activeSection === 'assign' && (

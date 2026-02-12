@@ -218,7 +218,26 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
 
       const answersPayload = answersRes.data?.data || {};
       setAnswers(answersPayload.answers || {});
-      setOutcomes(answersPayload.outcomes || {});
+      const rawOutcomes = answersPayload.outcomes || {};
+      const normalizedOutcomes = {};
+      normalizedQs.forEach((q) => {
+        const raw = rawOutcomes[q.id] ?? rawOutcomes[String(q.id)];
+        const normalized = typeof raw === 'string' ? raw.trim().toUpperCase() : raw;
+        if (normalized === OUTCOME_ACHIEVED) {
+          normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
+          return;
+        }
+        if (normalized === OUTCOME_NOT_ACHIEVED) {
+          normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
+          return;
+        }
+        if (normalized === 1 || normalized === '1' || normalized === true) {
+          normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
+          return;
+        }
+        normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
+      });
+      setOutcomes(normalizedOutcomes);
       setComments(answersPayload.comments || {});
       setAssessorComment(answersPayload.assessorComment || DEFAULT_ASSESSOR_COMMENT);
       const uploadsFromServer = answersPayload.fileUploads || {};
@@ -271,11 +290,32 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
 
   const saveMarking = async () => {
     if (!selectedSubmission) return;
-    const finalStatus = Object.values(outcomes).some((v) => v === OUTCOME_NOT_ACHIEVED) ? 'REDOING' : 'PASSED';
+    const normalizedOutcomes = {};
+    questions.forEach((q) => {
+      const raw = outcomes[q.id] ?? outcomes[String(q.id)];
+      const normalized = typeof raw === 'string' ? raw.trim().toUpperCase() : raw;
+      if (normalized === OUTCOME_ACHIEVED) {
+        normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
+        return;
+      }
+      if (normalized === OUTCOME_NOT_ACHIEVED) {
+        normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
+        return;
+      }
+      if (normalized === 1 || normalized === '1' || normalized === true) {
+        normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
+        return;
+      }
+      normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
+    });
+
+    const finalStatus = Object.values(normalizedOutcomes).some((v) => v === OUTCOME_NOT_ACHIEVED)
+      ? 'REDOING'
+      : 'PASSED';
     const marksPayload = {};
     questions.forEach((q) => {
       marksPayload[q.id] = {
-        outcome: outcomes[q.id] || OUTCOME_ACHIEVED,
+        outcome: normalizedOutcomes[q.id] || OUTCOME_NOT_ACHIEVED,
         comment: comments[q.id] || '',
       };
     });
@@ -311,6 +351,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
         { headers: { 'Content-Type': 'application/json' } }
       );
 
+      setOutcomes(normalizedOutcomes);
       if (onSuccess) onSuccess('Marking saved');
       setSelectedSubmission(null);
       setQuestions([]);
@@ -475,13 +516,18 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
                 </div>
               ) : null}
               <div className="marking-controls">
-                <label className="marking-toggle">
+                <label className="marking-switch">
                   <input
                     type="checkbox"
-                    checked={(outcomes[q.id] || OUTCOME_ACHIEVED) === OUTCOME_ACHIEVED}
+                    checked={(outcomes[q.id] || OUTCOME_NOT_ACHIEVED) === OUTCOME_ACHIEVED}
                     onChange={(e) => handleOutcomeToggle(q.id, e.target.checked)}
                   />
-                  <span>Achieved</span>
+                  <span className="marking-switch-track" aria-hidden="true">
+                    <span className="marking-switch-thumb" />
+                  </span>
+                  <span className="marking-switch-label">
+                    {(outcomes[q.id] || OUTCOME_NOT_ACHIEVED) === OUTCOME_ACHIEVED ? 'Achieved' : 'Not Achieved'}
+                  </span>
                 </label>
                 <textarea
                   className="marking-comment"

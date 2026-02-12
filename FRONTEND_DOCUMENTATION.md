@@ -26,7 +26,7 @@ App.jsx (Root)
         │   ├── UserManager.jsx
         │   ├── CourseManager.jsx
         │   ├── UnitManager.jsx
-        │   ├── CurrentActivityManager.jsx
+        │   ├── QuestionsManager.jsx
         │   └── AssignUnit.jsx
         ├── StudentAssignments.jsx (view='assignments')
         │   └── StudentAnswer.jsx
@@ -355,10 +355,10 @@ For each activity:
 ```javascript
 {
   config: Object,         // API configuration
-  currentUser: Object,    // Current user
   activity: Object,       // Activity being answered
-  unit: Object,           // Unit with questions
   onClose: Function,      // Close editor
+  onSubmitted: Function,  // Submit callback
+  onDraftSaved: Function, // Draft save callback
   onError: Function       // Error callback
 }
 ```
@@ -368,6 +368,8 @@ For each activity:
 - questions: Array       // Questions from unit
 - answers: Object        // Map of questionId => TipTap content
 - references: Object     // Map of questionId => URL array
+- fileUploads: Object    // Map of questionId => file metadata
+- uploading: Object      // Map of questionId => upload boolean
 - editors: Object        // Map of questionId => TipTap editor instance
 - isSaving: boolean      // Save in progress
 - isSubmitting: boolean  // Submit in progress
@@ -376,6 +378,7 @@ For each activity:
 **Features:**
 - TipTap rich text editor for each question
 - Multiple reference URL inputs per question
+- Optional attachments when uploadPermitted is enabled per question
 - Auto-save draft functionality
 - Submit for marking
 - Load existing answers
@@ -435,6 +438,17 @@ POST /api/saveAnswers.php
 - Add multiple URLs per question
 - Stored as JSON array in database
 - Validation: must be valid URLs
+
+**Attachments:**
+- Enabled per question when uploadPermitted is set in QuestionsManager
+- Uses multipart upload endpoint and stores metadata in answers.fileUploads
+- Allowed types: images (png, jpg, jpeg, gif) and documents (doc, docx, xls, xlsm, pdf)
+- Max size: 15 MB per file
+
+**Attachment API Calls:**
+- POST /api/uploadAnswerFile.php (multipart/form-data)
+- POST /api/deleteAnswerFile.php
+- GET /api/downloadAnswerFile.php
 
 ---
 
@@ -737,8 +751,9 @@ const formatted = formatDateTime(activity.dateSubmitted);
 1. **roster** - Class roster (teacher/admin)
 2. **courses** - CourseManager (admin)
 3. **units** - UnitManager (admin)
-4. **assign** - AssignUnit (teacher/admin)
-5. **users** - UserManager (admin)
+4. **questions** - QuestionsManager (admin)
+5. **assign** - AssignUnit (teacher/admin)
+6. **users** - UserManager (admin)
 
 **Features:**
 - Role-based tab visibility (teachers vs admins)
@@ -867,14 +882,14 @@ Modal.confirm({
 ---
 
 ### UnitManager.jsx
-**Purpose**: Unit CRUD operations with question editor
+**Purpose**: Unit CRUD operations with course filtering
 
 **Props:**
 ```javascript
 {
   config: Object,
-  setSendSuccessMessage: Function,
-  setSendErrorMessage: Function
+  onSuccess: Function,
+  onError: Function
 }
 ```
 
@@ -882,55 +897,22 @@ Modal.confirm({
 ```javascript
 - units: Array               // All units
 - courses: Array             // For course selection
-- editingUnit: Object|null   // Unit being edited
-- questions: Array           // Questions for unit
+- filterCourseId: string     // Optional course filter
+- form: Object               // { id, courseid, unitName, unitCode }
 - showEditor: boolean        // Collapsible editor toggle
-- isLoading: boolean
+- unitToDelete: Object|null
+- loading: boolean
 ```
 
 **Features:**
-
-**Unit List:**
-- Grouped/filterable by course
-- Shows name, description, question count
-- Edit/Delete actions
-
-**Unit Editor:**
-- Select course (dropdown)
-- Unit name and description
-- Dynamic question list
-- Add/remove questions
-- Question text editor
+- Filter by course
+- Create, update, and delete units
 - Editor panel remains hidden until Add/Edit
 
-**Question Structure:**
-```javascript
-{
-  id: number,         // Auto-incremented
-  text: string,       // Question text
-  type: string,       // Question type (not currently used)
-  points: number      // Point value (not currently used)
-}
-```
-
-**Question Management:**
-```javascript
-// Add question
-setQuestions([...questions, {
-  id: questions.length + 1,
-  text: '',
-  type: 'essay',
-  points: 10
-}]);
-
-// Remove question
-setQuestions(questions.filter(q => q.id !== qId));
-
-// Update question
-setQuestions(questions.map(q => 
-  q.id === qId ? {...q, text: newText} : q
-));
-```
+**Form Fields:**
+- Course (required)
+- Unit name (required)
+- Unit code (required)
 
 **API Calls:**
 - GET /api/getUnits.php
@@ -940,10 +922,57 @@ setQuestions(questions.map(q =>
 - POST /api/deleteUnit.php
 
 **Validation:**
-- Course must be selected
+- Course required
 - Unit name required
-- At least one question required
-- All questions must have text
+- Unit code required
+
+---
+
+### QuestionsManager.jsx
+**Purpose**: Question CRUD operations by course and unit
+
+**Props:**
+```javascript
+{
+  config: Object,
+  onSuccess: Function,
+  onError: Function
+}
+```
+
+**State:**
+```javascript
+- courses: Array             // Available courses
+- units: Array               // Units for the selected course
+- questions: Array           // Questions for selected unit
+- filterCourseId: string
+- filterUnitId: string
+- form: Object               // { id, courseid, unitid, QuestionRef, Question, uploadPermitted }
+- showEditor: boolean
+- questionToDelete: Object|null
+- loading: boolean
+```
+
+**Features:**
+- Filter by course then unit
+- Create, update, delete questions
+- uploadPermitted flag controls whether students can attach files
+- Switch control places "Allow uploads" next to editor actions
+
+**Question Fields:**
+- Course ID (required)
+- Unit ID (required)
+- QuestionRef (optional)
+- Question text (required)
+- uploadPermitted (0/1)
+
+**API Calls:**
+- GET /api/getCourses.php
+- POST /api/getUnits.php
+- POST /api/getQuestions.php
+- POST /api/createQuestion.php
+- POST /api/updateQuestion.php
+- POST /api/deleteQuestion.php
 
 ---
 

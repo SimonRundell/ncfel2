@@ -343,10 +343,11 @@ Delete a course.
 ### GET /api/getUnits.php
 Retrieve units, optionally filtered by course.
 
-**Query Parameters (optional):**
+**Request Body (optional):**
 ```json
 {
-  "courseId": 3  // optional: filter by course
+  "courseid": 3, // optional: filter by course
+  "id": 10       // optional: filter by unit id
 }
 ```
 
@@ -354,20 +355,8 @@ Retrieve units, optionally filtered by course.
 ```json
 {
   "status_code": 200,
-  "message": "[{\"id\":10,\"courseId\":3,\"name\":\"Unit 1\",\"description\":\"...\",\"questions\":[...]},...]"
+  "message": "[{\"id\":10,\"courseid\":3,\"unitName\":\"Unit 1\",\"unitCode\":\"PR101/TS2221\"},...]"
 }
-```
-
-**Questions Format (JSON array):**
-```json
-[
-  {
-    "id": 1,
-    "text": "Question text here",
-    "type": "essay|multiple_choice|...",
-    "points": 10
-  }
-]
 ```
 
 ### POST /api/createUnit.php
@@ -376,10 +365,9 @@ Create a new unit.
 **Request Body:**
 ```json
 {
-  "courseId": 3,
-  "name": "Unit Name",
-  "description": "Unit description",
-  "questions": [{"id":1,"text":"Question 1",...}]
+  "courseid": 3,
+  "unitName": "Unit Name",
+  "unitCode": "PR101/TS2221"
 }
 ```
 
@@ -399,9 +387,9 @@ Update existing unit.
 ```json
 {
   "id": 10,
-  "name": "Updated Name",          // optional
-  "description": "New description", // optional
-  "questions": [...]                // optional: new questions array
+  "courseid": 3,
+  "unitName": "Updated Name",
+  "unitCode": "PR101/TS2221"
 }
 ```
 
@@ -428,6 +416,126 @@ Delete a unit.
 {
   "status_code": 200,
   "message": "Unit deleted"
+}
+```
+
+## Question Management
+
+### POST /api/getQuestions.php
+Retrieve questions for a unit (required) and optional course filter.
+
+**Request Body:**
+```json
+{
+  "unitId": 5,
+  "courseId": 1
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "status_code": 200,
+  "message": [
+    {
+      "id": 12,
+      "courseid": 1,
+      "unitid": 5,
+      "QuestionRef": "Q1a",
+      "Question": "Explain the CIA triad",
+      "uploadPermitted": 1
+    }
+  ]
+}
+```
+
+### POST /api/createQuestion.php
+Create a new question for a unit.
+
+**Request Body:**
+```json
+{
+  "courseid": 1,
+  "unitid": 5,
+  "QuestionRef": "Q1a",
+  "Question": "Explain the CIA triad",
+  "uploadPermitted": 1
+}
+```
+
+### POST /api/updateQuestion.php
+Update an existing question.
+
+**Request Body:**
+```json
+{
+  "id": 12,
+  "courseid": 1,
+  "unitid": 5,
+  "QuestionRef": "Q1a",
+  "Question": "Explain the CIA triad",
+  "uploadPermitted": 0
+}
+```
+
+### POST /api/deleteQuestion.php
+Delete a question.
+
+**Request Body:**
+```json
+{
+  "id": 12
+}
+```
+
+**Notes:**
+- Set uploadPermitted to 1 to allow student attachments for the question.
+
+## Answer File Uploads
+
+### POST /api/uploadAnswerFile.php
+Upload a file attachment for a question. Uses multipart/form-data.
+
+**Form Data:**
+- activityId (required)
+- studentId (required)
+- questionId (required)
+- file (required)
+
+**Constraints:**
+- Allowed extensions: gif, png, jpg, jpeg, doc, docx, xls, xlsm, pdf
+- Max file size: 15 MB
+- Question must have uploadPermitted = 1 or upload is rejected (403)
+
+**Backend Storage:**
+- Requires fileStoragePath in api/.config.json
+- Files are stored under {fileStoragePath}/{studentId}/{fileId}
+- fileId is a server-generated UUID with extension
+- Metadata saved to answers.fileUploads as JSON (id, originalName, mimeType, size, uploadedAt, path)
+
+### GET /api/downloadAnswerFile.php
+Download a previously uploaded file.
+
+**Query Parameters:**
+```json
+{
+  "activityId": 10,
+  "studentId": 25,
+  "questionId": 12,
+  "fileId": "{fileId}" // value from fileUploads metadata
+}
+```
+
+### POST /api/deleteAnswerFile.php
+Remove an uploaded file (metadata and stored file).
+
+**Request Body:**
+```json
+{
+  "activityId": 10,
+  "studentId": 25,
+  "questionId": 12,
+  "fileId": "{fileId}"
 }
 ```
 
