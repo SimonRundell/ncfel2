@@ -89,7 +89,7 @@ if ($mysqli->connect_error) {
     log_info("Connection failed: " . $mysqli->connect_error);
     send_response("Connection failed: " . $mysqli->connect_error, 500);
 } else {
-    log_info("Connected successfully to the database.");
+    log_info("Connected successfully to the database on " . $config['servername']. " as user " . $config['username']. " to database " . $config['dbname']);
 }
 
 /**

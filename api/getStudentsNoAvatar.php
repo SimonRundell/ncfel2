@@ -1,7 +1,7 @@
 <?php
 include 'setup.php';
 
-$query = "SELECT * FROM user WHERE email = ? AND passwordHash = ?";
+$query = "SELECT id, email, userName, classCode, status FROM user WHERE classCode = ?";
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {
@@ -9,7 +9,7 @@ if (!$stmt) {
     send_response("Prepare failed: " . $mysqli->error, 500);
 }
 
-$stmt->bind_param("ss", $receivedData['email'], $receivedData['passwordHash']);
+$stmt->bind_param("s", $receivedData['classCode']);
 
 if (!$stmt->execute()) {
     log_info("Execute failed: " . $stmt->error);
@@ -21,7 +21,6 @@ $result = $stmt->get_result();
 if ($result) {
     $rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
     $json = json_encode($rows);
-    log_info("Query successful: " . $json);
     send_response($json, 200);
 } else {
     log_info("Query failed: " . $mysqli->error);
