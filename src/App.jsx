@@ -25,6 +25,7 @@ import AssessmentReport from './AssessmentReport.jsx';
 import MarkingDashboard from './MarkingDashboard.jsx';
 import CMFloatAd from './CMFloatAd.jsx';
 import axios from 'axios';
+import { initApiAuth, clearApiAuth } from './apiAuth';
 
 /**
  * App Component - Root component of the NCFE Level 2 Certificate System
@@ -51,6 +52,7 @@ function App() {
    * @property {string} api - Base URL for API endpoints
    */
   const [config, setConfig] = useState(null);
+  const [apiReady, setApiReady] = useState(false);
   
   /**
    * @type {[Object, Function]} Ant Design message API for notifications
@@ -134,7 +136,7 @@ function App() {
    * @effect
    * @dependency {Function} messageApi - For displaying load status
    */
-   useEffect(() => {
+  useEffect(() => {
     // Add cache busting parameter to force fresh config load
     const timestamp = new Date().getTime();
     axios.get(`/.config.json?t=${timestamp}`)
@@ -148,6 +150,27 @@ function App() {
         messageApi.error('Error fetching config');
       });
   }, [messageApi]);
+
+  useEffect(() => {
+    if (!config?.api) return;
+    let isActive = true;
+
+    initApiAuth(config)
+      .then(() => {
+        if (isActive) setApiReady(true);
+      })
+      .catch((error) => {
+        console.error('API auth failed:', error);
+        if (isActive) {
+          setApiReady(false);
+          setSendErrorMessage('API authentication failed. Check config credentials.');
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [config]);
 
 /**
  * Success Message Display Effect
@@ -184,7 +207,13 @@ useEffect(() => {
       </div>
       <div className="app-container">
 
-        {currentUser ? (
+        {!config || !apiReady ? (
+          <div className="central-overlay-spinner">
+            <div className="spinner-text">
+              <Spin size="large" /> Loading...
+            </div>
+          </div>
+        ) : currentUser ? (
           <>
             <Menu
                currentUser={currentUser}
@@ -196,7 +225,16 @@ useEffect(() => {
                 if (section) setAdminSection(section);
               }}
               onProfile={() => setShowProfile(true)}
-               onLogout={() => setCurrentUser(null)}
+               onLogout={() => {
+                setCurrentUser(null);
+                clearApiAuth();
+                setApiReady(false);
+                if (config) {
+                  initApiAuth(config).then(() => setApiReady(true)).catch(() => {
+                    setSendErrorMessage('API authentication failed. Check config credentials.');
+                  });
+                }
+               }}
               viewLocked={mustChangePassword}
             />
             {activeView === 'admin' && currentUser.status >= 2 && (

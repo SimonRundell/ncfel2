@@ -1,4 +1,6 @@
 {
     "appName": "NCFEL2",
-    "api": "https://localhost/api"
+    "api": "https://localhost/api",
+    "apiAuthUser": "admin",
+    "apiAuthPassword": "replace-with-strong-password"
 }

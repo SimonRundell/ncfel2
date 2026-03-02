@@ -82,6 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
  */
 // Read connection information from a secure location
 $config = json_decode(file_get_contents('./.config.json'), true);
+if (!is_array($config)) {
+    send_response('Invalid configuration file', 500);
+}
+
+enforce_auth_if_needed($config);
+
 $mysqli = new mysqli($config['servername'], $config['username'], $config['password'], $config['dbname']);
 
 // Check connection
@@ -257,3 +263,258 @@ function log_info($log) {
     $currentDateTime = date('Y-m-d H:i:s');
     file_put_contents($file, $currentDateTime." : ".$log.chr(13), FILE_APPEND);
 } // log_info
+
+function enforce_auth_if_needed($config) {
+    if (!should_enforce_auth()) {
+        return;
+    }
+
+    $authHeader = get_auth_header();
+    if (!$authHeader) {
+        header('WWW-Authenticate: Basic realm="NCFE API"');
+        send_response('Unauthorized', 401);
+    }
+
+    if (stripos($authHeader, 'Bearer ') === 0) {
+        $token = trim(substr($authHeader, 7));
+        $claims = [];
+        $errorMessage = '';
+        $errorCode = 401;
+
+        if (!verify_jwt($token, $config, $claims, $errorCode, $errorMessage)) {
+            send_response($errorMessage !== '' ? $errorMessage : 'Unauthorized', $errorCode);
+        }
+
+        $GLOBALS['authenticatedUser'] = $claims['sub'] ?? null;
+        $GLOBALS['authenticatedRole'] = $claims['role'] ?? null;
+        enforce_role_policy($config, $GLOBALS['authenticatedRole']);
+        return;
+    }
+
+    if (stripos($authHeader, 'Basic ') === 0) {
+        $decoded = base64_decode(substr($authHeader, 6));
+        $parts = explode(':', $decoded, 2);
+        $username = $parts[0] ?? '';
+        $password = $parts[1] ?? '';
+
+        $role = null;
+        if (!verify_api_user($username, $password, $config, $role)) {
+            header('WWW-Authenticate: Basic realm="NCFE API"');
+            send_response('Unauthorized', 401);
+        }
+
+        $GLOBALS['authenticatedUser'] = $username;
+        $GLOBALS['authenticatedRole'] = $role;
+        enforce_role_policy($config, $role);
+        return;
+    }
+
+    send_response('Unauthorized', 401);
+}
+
+function should_enforce_auth() {
+    $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
+    $allowlist = ['authToken.php'];
+    return !in_array($script, $allowlist, true);
+}
+
+function get_auth_header() {
+    if (function_exists('getallheaders')) {
+        $headers = getallheaders();
+        if (isset($headers['Authorization'])) {
+            return trim($headers['Authorization']);
+        }
+        if (isset($headers['authorization'])) {
+            return trim($headers['authorization']);
+        }
+    }
+
+    if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+        return trim($_SERVER['HTTP_AUTHORIZATION']);
+    }
+    if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        return trim($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+    }
+
+    return null;
+}
+
+function verify_api_user($username, $password, $config, &$role = null) {
+    $user = get_api_user($username, $config);
+    if (!$user) {
+        return false;
+    }
+
+    if (isset($user['passwordHash']) && password_verify($password, $user['passwordHash'])) {
+        $role = $user['role'] ?? null;
+        return true;
+    }
+
+    if (isset($user['password']) && hash_equals($user['password'], $password)) {
+        $role = $user['role'] ?? null;
+        return true;
+    }
+
+    return false;
+}
+
+function get_api_user($username, $config) {
+    $users = $config['apiAuthUsers'] ?? [];
+    if (!is_array($users)) {
+        return null;
+    }
+
+    foreach ($users as $user) {
+        if (!is_array($user)) {
+            continue;
+        }
+        if (($user['username'] ?? '') === $username) {
+            return $user;
+        }
+    }
+
+    return null;
+}
+
+function enforce_role_policy($config, $role) {
+    $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
+    $requiredRoles = get_required_roles_for_script($script);
+    if (!$requiredRoles) {
+        return;
+    }
+
+    if (!$role || !in_array($role, $requiredRoles, true)) {
+        send_response('Forbidden', 403);
+    }
+}
+
+function get_required_roles_for_script($script) {
+    $reportingAllowed = [
+        'completedAssessments.php',
+        'downloadAnswerFile.php'
+    ];
+
+    $isReadOnly = preg_match('/^get.+\.php$/', $script) === 1;
+    if ($isReadOnly || in_array($script, $reportingAllowed, true)) {
+        return ['admin', 'reporting'];
+    }
+
+    return ['admin'];
+}
+
+function verify_jwt($token, $config, &$claims, &$errorCode, &$errorMessage) {
+    $errorCode = 401;
+    $errorMessage = '';
+
+    $secret = $config['jwtSecret'] ?? '';
+    if ($secret === '') {
+        $errorCode = 500;
+        $errorMessage = 'JWT secret is not configured';
+        return false;
+    }
+
+    $parts = explode('.', $token);
+    if (count($parts) !== 3) {
+        $errorMessage = 'Invalid token';
+        return false;
+    }
+
+    [$encodedHeader, $encodedPayload, $encodedSignature] = $parts;
+    $headerJson = base64url_decode($encodedHeader);
+    $payloadJson = base64url_decode($encodedPayload);
+
+    $header = json_decode($headerJson, true);
+    $payload = json_decode($payloadJson, true);
+
+    if (!is_array($header) || !is_array($payload)) {
+        $errorMessage = 'Invalid token';
+        return false;
+    }
+
+    if (($header['alg'] ?? '') !== 'HS256') {
+        $errorMessage = 'Unsupported token algorithm';
+        return false;
+    }
+
+    $signature = base64url_encode(hash_hmac('sha256', $encodedHeader . '.' . $encodedPayload, $secret, true));
+    if (!hash_equals($signature, $encodedSignature)) {
+        $errorMessage = 'Invalid token signature';
+        return false;
+    }
+
+    $now = time();
+    if (isset($payload['nbf']) && $now < (int) $payload['nbf']) {
+        $errorMessage = 'Token not active';
+        return false;
+    }
+    if (isset($payload['exp']) && $now >= (int) $payload['exp']) {
+        $errorMessage = 'Token expired';
+        return false;
+    }
+
+    $issuer = $config['jwtIssuer'] ?? null;
+    if ($issuer && isset($payload['iss']) && $payload['iss'] !== $issuer) {
+        $errorMessage = 'Invalid token issuer';
+        return false;
+    }
+
+    $audience = $config['jwtAudience'] ?? null;
+    if ($audience && isset($payload['aud']) && $payload['aud'] !== $audience) {
+        $errorMessage = 'Invalid token audience';
+        return false;
+    }
+
+    $claims = $payload;
+    return true;
+}
+
+function create_jwt($username, $config, $role = null) {
+    $secret = $config['jwtSecret'] ?? '';
+    if ($secret === '') {
+        send_response('JWT secret is not configured', 500);
+    }
+
+    $ttlMinutes = (int) ($config['jwtTtlMinutes'] ?? 60);
+    if ($ttlMinutes <= 0) {
+        $ttlMinutes = 60;
+    }
+
+    $now = time();
+    $exp = $now + ($ttlMinutes * 60);
+
+    $header = [
+        'alg' => 'HS256',
+        'typ' => 'JWT'
+    ];
+
+    $payload = [
+        'iss' => $config['jwtIssuer'] ?? 'ncfel2',
+        'aud' => $config['jwtAudience'] ?? 'ncfel2-api',
+        'iat' => $now,
+        'nbf' => $now - 5,
+        'exp' => $exp,
+        'sub' => $username,
+        'role' => $role
+    ];
+
+    $encodedHeader = base64url_encode(json_encode($header));
+    $encodedPayload = base64url_encode(json_encode($payload));
+    $signature = base64url_encode(hash_hmac('sha256', $encodedHeader . '.' . $encodedPayload, $secret, true));
+
+    return [
+        'token' => $encodedHeader . '.' . $encodedPayload . '.' . $signature,
+        'exp' => $exp
+    ];
+}
+
+function base64url_encode($data) {
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
+function base64url_decode($data) {
+    $remainder = strlen($data) % 4;
+    if ($remainder) {
+        $data .= str_repeat('=', 4 - $remainder);
+    }
+    return base64_decode(strtr($data, '-_', '+/'));
+}
