@@ -3,6 +3,7 @@ include 'setup.php';
 
 $activityId = $receivedData['activityId'] ?? null;
 $studentId  = $receivedData['studentId'] ?? null;
+$attemptNumber = isset($receivedData['attemptNumber']) ? (int) $receivedData['attemptNumber'] : null;
 
 if ($activityId === null || $studentId === null) {
     send_response('Missing activityId or studentId', 400);
@@ -10,6 +11,10 @@ if ($activityId === null || $studentId === null) {
 
 $activityId = (int)$activityId;
 $studentId  = (int)$studentId;
+
+if (!$attemptNumber) {
+    $attemptNumber = get_current_attempt($activityId, $studentId, $mysqli);
+}
 
 /**
  * 1) Get courseId + unitId (and optionally assessorComment) from currentactivity
@@ -78,6 +83,7 @@ $stmt = $mysqli->prepare('
         ON a.questionId = q.id
        AND a.activityId = ?
        AND a.studentId  = ?
+       AND a.attemptNumber = ?
 
     WHERE q.courseid = ?
       AND q.unitid   = ?
@@ -90,7 +96,7 @@ if (!$stmt) {
     send_response('Database error', 500);
 }
 
-$stmt->bind_param('iiii', $activityId, $studentId, $courseId, $unitId);
+$stmt->bind_param('iiiii', $activityId, $studentId, $attemptNumber, $courseId, $unitId);
 
 if (!$stmt->execute()) {
     log_info('Execute failed (combined): ' . $stmt->error);
@@ -160,6 +166,7 @@ send_response([
         'studentId'  => $studentId,
         'courseId'   => $courseId,
         'unitId'     => $unitId,
+        'attemptNumber' => $attemptNumber,
         'status'     => $status,
         'assessorId' => $assessorId,
         'assessorComment' => $assessorComment,

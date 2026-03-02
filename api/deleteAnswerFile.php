@@ -9,18 +9,23 @@ $activityId = $receivedData['activityId'] ?? null;
 $studentId = $receivedData['studentId'] ?? null;
 $questionId = $receivedData['questionId'] ?? null;
 $fileId = $receivedData['fileId'] ?? null;
+$attemptNumber = isset($receivedData['attemptNumber']) ? (int) $receivedData['attemptNumber'] : null;
 
 if ($activityId === null || $studentId === null || $questionId === null || !$fileId) {
     send_response('Missing activityId, studentId, questionId, or fileId', 400);
 }
 
-$selectStmt = $mysqli->prepare('SELECT fileUploads FROM answers WHERE activityId = ? AND studentId = ? AND questionId = ? LIMIT 1');
+if (!$attemptNumber) {
+    $attemptNumber = get_current_attempt((int) $activityId, (int) $studentId, $mysqli);
+}
+
+$selectStmt = $mysqli->prepare('SELECT fileUploads FROM answers WHERE activityId = ? AND studentId = ? AND questionId = ? AND attemptNumber = ? LIMIT 1');
 if (!$selectStmt) {
     log_info('deleteAnswerFile prepare failed: ' . $mysqli->error);
     send_response('Database error', 500);
 }
 
-$selectStmt->bind_param('iii', $activityId, $studentId, $questionId);
+$selectStmt->bind_param('iiii', $activityId, $studentId, $questionId, $attemptNumber);
 $selectStmt->execute();
 $result = $selectStmt->get_result();
 if (!$result || !($row = $result->fetch_assoc())) {
@@ -43,14 +48,14 @@ if (!$found) {
     send_response('File not found for this answer', 404);
 }
 
-$updateStmt = $mysqli->prepare('UPDATE answers SET fileUploads = ?, updatedAt = NOW() WHERE activityId = ? AND studentId = ? AND questionId = ? LIMIT 1');
+$updateStmt = $mysqli->prepare('UPDATE answers SET fileUploads = ?, updatedAt = NOW() WHERE activityId = ? AND studentId = ? AND questionId = ? AND attemptNumber = ? LIMIT 1');
 if (!$updateStmt) {
     log_info('deleteAnswerFile update prepare failed: ' . $mysqli->error);
     send_response('Database error', 500);
 }
 
 $uploadsJson = json_encode($remaining);
-$updateStmt->bind_param('siii', $uploadsJson, $activityId, $studentId, $questionId);
+$updateStmt->bind_param('siiii', $uploadsJson, $activityId, $studentId, $questionId, $attemptNumber);
 if (!$updateStmt->execute()) {
     log_info('deleteAnswerFile execute failed: ' . $updateStmt->error);
     send_response('Database error', 500);

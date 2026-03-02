@@ -8,9 +8,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $activityId = $_POST['activityId'] ?? null;
 $studentId = $_POST['studentId'] ?? null;
 $questionId = $_POST['questionId'] ?? null;
+$attemptNumber = isset($_POST['attemptNumber']) ? (int) $_POST['attemptNumber'] : null;
 
 if ($activityId === null || $studentId === null || $questionId === null) {
     send_response('Missing activityId, studentId, or questionId', 400);
+}
+
+if (!$attemptNumber) {
+    $attemptNumber = get_current_attempt((int) $activityId, (int) $studentId, $mysqli);
 }
 
 if (!isset($_FILES['file'])) {
@@ -75,9 +80,9 @@ $existingRefs = '[]';
 $existingStatus = 'INPROGRESS';
 $currentUploads = [];
 
-$selectStmt = $mysqli->prepare('SELECT answer, `references`, status, fileUploads FROM answers WHERE activityId = ? AND studentId = ? AND questionId = ? LIMIT 1');
+$selectStmt = $mysqli->prepare('SELECT answer, `references`, status, fileUploads FROM answers WHERE activityId = ? AND studentId = ? AND questionId = ? AND attemptNumber = ? LIMIT 1');
 if ($selectStmt) {
-    $selectStmt->bind_param('iii', $activityId, $studentId, $questionId);
+    $selectStmt->bind_param('iiii', $activityId, $studentId, $questionId, $attemptNumber);
     $selectStmt->execute();
     $selectResult = $selectStmt->get_result();
     if ($selectResult && $row = $selectResult->fetch_assoc()) {
@@ -101,19 +106,19 @@ $currentUploads[] = $fileEntry;
 
 $uploadsJson = json_encode($currentUploads);
 
-$insert = $mysqli->prepare('INSERT INTO answers (activityId, studentId, questionId, answer, `references`, status, updatedAt, fileUploads) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?) ON DUPLICATE KEY UPDATE fileUploads = VALUES(fileUploads), updatedAt = VALUES(updatedAt)');
+$insert = $mysqli->prepare('INSERT INTO answers (activityId, studentId, questionId, attemptNumber, answer, `references`, status, updatedAt, fileUploads) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?) ON DUPLICATE KEY UPDATE fileUploads = VALUES(fileUploads), updatedAt = VALUES(updatedAt)');
 if (!$insert) {
     log_info('uploadAnswerFile prepare failed: ' . $mysqli->error);
     send_response('Database error', 500);
 }
 
-$insert->bind_param('iiissss', $activityId, $studentId, $questionId, $existingAnswer, $existingRefs, $existingStatus, $uploadsJson);
+$insert->bind_param('iiiissss', $activityId, $studentId, $questionId, $attemptNumber, $existingAnswer, $existingRefs, $existingStatus, $uploadsJson);
 if (!$insert->execute()) {
     log_info('uploadAnswerFile execute failed: ' . $insert->error);
     send_response('Database error', 500);
 }
 
-$downloadUrl = rtrim($config['api'], '/') . '/downloadAnswerFile.php?activityId=' . urlencode($activityId) . '&studentId=' . urlencode($studentId) . '&questionId=' . urlencode($questionId) . '&fileId=' . urlencode($fileName);
+$downloadUrl = rtrim($config['api'], '/') . '/downloadAnswerFile.php?activityId=' . urlencode($activityId) . '&studentId=' . urlencode($studentId) . '&questionId=' . urlencode($questionId) . '&attemptNumber=' . urlencode($attemptNumber) . '&fileId=' . urlencode($fileName);
 
 send_response([
     'message' => 'File uploaded',

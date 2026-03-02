@@ -345,8 +345,15 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
   const [assessorComment, setAssessorComment] = useState('');
   const [fileUploads, setFileUploads] = useState({}); // questionId -> [uploads]
   const [uploadingMap, setUploadingMap] = useState({}); // questionId -> bool
-  const storageKey = useMemo(() => `answer-${activity?.id || 'unknown'}`, [activity?.id]);
-  const refsKey = useMemo(() => `answer-refs-${activity?.id || 'unknown'}`, [activity?.id]);
+  const [attemptNumber, setAttemptNumber] = useState(activity?.currentAttempt || 1);
+  const storageKey = useMemo(
+    () => `answer-${activity?.id || 'unknown'}-attempt-${attemptNumber}`,
+    [activity?.id, attemptNumber]
+  );
+  const refsKey = useMemo(
+    () => `answer-refs-${activity?.id || 'unknown'}-attempt-${attemptNumber}`,
+    [activity?.id, attemptNumber]
+  );
   const blockTimer = useRef(null);
   const editorsRef = useRef({});
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -360,14 +367,18 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     };
   }, []);
 
+  useEffect(() => {
+    setAttemptNumber(activity?.currentAttempt || 1);
+  }, [activity?.currentAttempt]);
+
   const questionStorageKey = useCallback((qid) => `${storageKey}-q-${qid}`, [storageKey]);
 
   const buildFileUrl = useCallback(
     (questionId, fileId) => {
       if (!config?.api || !activity?.id || !activity?.studentId || !fileId) return '';
-      return `${config.api}/downloadAnswerFile.php?activityId=${activity.id}&studentId=${activity.studentId}&questionId=${questionId}&fileId=${encodeURIComponent(fileId)}`;
+      return `${config.api}/downloadAnswerFile.php?activityId=${activity.id}&studentId=${activity.studentId}&questionId=${questionId}&attemptNumber=${attemptNumber}&fileId=${encodeURIComponent(fileId)}`;
     },
-    [config?.api, activity?.id, activity?.studentId]
+    [config?.api, activity?.id, activity?.studentId, attemptNumber]
   );
 
   const normalizeUploadsForQuestion = useCallback(
@@ -529,7 +540,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
       try {
         const response = await axios.post(
           `${config.api}/getAnswers.php`,
-          { activityId: activity.id, studentId: activity.studentId },
+          { activityId: activity.id, studentId: activity.studentId, attemptNumber },
           { headers: { 'Content-Type': 'application/json' } }
         );
 
@@ -541,12 +552,14 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         const serverComments = payload.comments || {};
         const serverAssessorComment = payload.assessorComment || '';
         const serverUploads = payload.fileUploads || {};
+        const serverAttempt = payload.currentAttempt || payload.attemptNumber || attemptNumber;
 
         if (!Object.keys(serverAnswers).length) return;
 
         setActivityStatus(serverStatus);
         setStatusText(displayStatus(serverStatus));
 
+        setAttemptNumber(serverAttempt);
         setAnswers(serverAnswers);
         setOutcomes(serverOutcomes);
         setMarkerComments(serverComments);
@@ -575,7 +588,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     };
 
     fetchSavedAnswers();
-  }, [activity?.id, activity?.studentId, config?.api, storageKey, refsKey, normalizeUploadsForQuestion]);
+  }, [activity?.id, activity?.studentId, config?.api, storageKey, refsKey, normalizeUploadsForQuestion, attemptNumber]);
 
   const displayStatus = (status) => {
     switch (status) {
@@ -593,6 +606,10 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         return 'RESUBMITTED · Read-only';
       case 'PASSED':
         return 'PASSED · Read-only';
+      case 'RETURNED':
+        return 'RETURNED · Review feedback';
+      case 'NOTPASSED':
+        return 'NOT PASSED · Read-only';
       default:
         return status;
     }
@@ -661,6 +678,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         formData.append('activityId', activity.id);
         formData.append('studentId', activity.studentId);
         formData.append('questionId', questionId);
+        formData.append('attemptNumber', attemptNumber);
 
         const resp = await axios.post(`${config.api}/uploadAnswerFile.php`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -698,6 +716,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
           activityId: activity.id,
           studentId: activity.studentId,
           questionId,
+          attemptNumber,
           fileId,
         },
         { headers: { 'Content-Type': 'application/json' } }
@@ -740,7 +759,8 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     if (!config?.api || !activity?.id) return;
     setLoading(true);
     try {
-      const nextStatus = activityStatus === 'REDOING' ? 'RESUBMITTED' : 'SUBMITTED';
+      const isRedoAttempt = attemptNumber >= 2 || activityStatus === 'REDOING' || activityStatus === 'RETURNED';
+      const nextStatus = isRedoAttempt ? 'RESUBMITTED' : 'SUBMITTED';
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       // Persist draft locally (placeholder until backend storage is added)
       const perQuestionRefs = {};
@@ -768,6 +788,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
           references: perQuestionRefs,
           fileUploads: serializeFileUploads(),
           status: nextStatus,
+          attemptNumber,
         },
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -793,7 +814,8 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     if (!config?.api || !activity?.id) return;
     setLoading(true);
     try {
-      const draftStatus = activityStatus === 'REDOING' ? 'REDOING' : 'INPROGRESS';
+      const isRedoAttempt = attemptNumber >= 2 || activityStatus === 'REDOING' || activityStatus === 'RETURNED';
+      const draftStatus = isRedoAttempt ? 'REDOING' : 'INPROGRESS';
       const perQuestionRefs = {};
       Object.keys(refsMap).forEach((qid) => {
         const cleaned = (refsMap[qid] || []).map((r) => (r || '').trim()).filter(Boolean);
@@ -817,6 +839,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         references: perQuestionRefs,
         fileUploads: serializeFileUploads(),
         status: 'DRAFT',
+        attemptNumber,
       };
 
       console.log('Saving draft with data:', jsonData);
@@ -870,7 +893,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
       'DISCONTINUED',
     ];
     if (lockedStatuses.includes(activityStatus)) return false;
-    if (activityStatus === 'REDOING' && (outcomes[qid] || 'NOT ACHIEVED') === 'ACHIEVED') return false;
+    if ((activityStatus === 'REDOING' || activityStatus === 'RETURNED') && (outcomes[qid] || 'NOT ACHIEVED') === 'ACHIEVED') return false;
     return true;
   };
 
@@ -891,7 +914,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
           <div>
             <div className="modal-title">Assessment</div>
             <div className="modal-subtitle">
-              Status: {statusText} {blockMessage ? ` · ${blockMessage}` : ''}
+              Status: {statusText} · Attempt {attemptNumber} {blockMessage ? ` · ${blockMessage}` : ''}
             </div>
           </div>
           <button type="button" onClick={onClose} disabled={loading}>
@@ -906,7 +929,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
               Unit: {activity?.unitId}
               {unitName ? ` · ${unitName}` : ''}
              <span className="normal">Course: {courseName || activity?.courseId}</span>
-             <span className="normal"> Current status: {displayStatus(activityStatus)}</span>
+             <span className="normal"> Current status: {displayStatus(activityStatus)} (Attempt {attemptNumber})</span>
             </div>
           </div>
 

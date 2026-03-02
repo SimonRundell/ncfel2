@@ -9,18 +9,23 @@ $activityId = $_GET['activityId'] ?? null;
 $studentId = $_GET['studentId'] ?? null;
 $questionId = $_GET['questionId'] ?? null;
 $fileId = $_GET['fileId'] ?? null;
+$attemptNumber = isset($_GET['attemptNumber']) ? (int) $_GET['attemptNumber'] : null;
 
 if ($activityId === null || $studentId === null || $questionId === null || !$fileId) {
     send_response('Missing activityId, studentId, questionId, or fileId', 400);
 }
 
-$selectStmt = $mysqli->prepare('SELECT fileUploads FROM answers WHERE activityId = ? AND studentId = ? AND questionId = ? LIMIT 1');
+if (!$attemptNumber) {
+    $attemptNumber = get_current_attempt((int) $activityId, (int) $studentId, $mysqli);
+}
+
+$selectStmt = $mysqli->prepare('SELECT fileUploads FROM answers WHERE activityId = ? AND studentId = ? AND questionId = ? AND attemptNumber = ? LIMIT 1');
 if (!$selectStmt) {
     log_info('downloadAnswerFile prepare failed: ' . $mysqli->error);
     send_response('Database error', 500);
 }
 
-$selectStmt->bind_param('iii', $activityId, $studentId, $questionId);
+$selectStmt->bind_param('iiii', $activityId, $studentId, $questionId, $attemptNumber);
 $selectStmt->execute();
 $result = $selectStmt->get_result();
 if (!$result || !($row = $result->fetch_assoc())) {

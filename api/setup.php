@@ -264,6 +264,27 @@ function log_info($log) {
     file_put_contents($file, $currentDateTime." : ".$log.chr(13), FILE_APPEND);
 } // log_info
 
+function get_current_attempt($activityId, $studentId, $mysqli) {
+    $stmt = $mysqli->prepare('SELECT currentAttempt FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
+    if (!$stmt) {
+        return 1;
+    }
+
+    $stmt->bind_param('ii', $activityId, $studentId);
+    if (!$stmt->execute()) {
+        return 1;
+    }
+
+    $result = $stmt->get_result();
+    if (!$result) {
+        return 1;
+    }
+
+    $row = $result->fetch_assoc();
+    $attempt = isset($row['currentAttempt']) ? (int) $row['currentAttempt'] : 1;
+    return $attempt > 0 ? $attempt : 1;
+}
+
 function enforce_auth_if_needed($config) {
     if (!should_enforce_auth()) {
         return;

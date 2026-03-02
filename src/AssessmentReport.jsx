@@ -102,6 +102,7 @@ const AssessmentReport = ({ config, currentUser, onError }) => {
           <td>${row.courseLabel || ''}</td>
           <td>${row.unitLabel || ''}</td>
           <td>${row.status || ''}</td>
+          <td>${row.attemptNumber || ''}</td>
           <td>${formatDateTime(row.dateSet) || ''}</td>
           <td>${formatDateTime(row.dateSubmitted) || ''}</td>
           <td>${formatDateTime(row.dateResubmitted) || ''}</td>
@@ -149,6 +150,7 @@ const AssessmentReport = ({ config, currentUser, onError }) => {
                 <th>Course</th>
                 <th>Unit</th>
                 <th>Status</th>
+                <th>Attempt</th>
                 <th>Date set</th>
                 <th>Submitted</th>
                 <th>Resubmitted</th>
@@ -218,6 +220,7 @@ const AssessmentReport = ({ config, currentUser, onError }) => {
             courseLabel: '',
             unitLabel: '',
             status: '—',
+            attemptNumber: '',
             dateSet: '',
             dateSubmitted: '',
             dateResubmitted: '',
@@ -233,6 +236,7 @@ const AssessmentReport = ({ config, currentUser, onError }) => {
         courseLabel: courseMap[act.courseId] || `Course ${act.courseId}`,
         unitLabel: unitMap[act.unitId] || `Unit ${act.unitId}`,
         status: act.status,
+        attemptNumber: act.currentAttempt || 1,
         dateSet: act.dateSet,
         dateSubmitted: act.dateSubmitted,
         dateResubmitted: act.dateResubmitted,
@@ -302,6 +306,7 @@ const AssessmentReport = ({ config, currentUser, onError }) => {
                   <th>Course</th>
                   <th>Unit</th>
                   <th>Status</th>
+                  <th>Attempt</th>
                   <th>Date set</th>
                   <th>Submitted</th>
                   <th>Resubmitted</th>
@@ -323,6 +328,7 @@ const AssessmentReport = ({ config, currentUser, onError }) => {
                       <td>{row.courseLabel}</td>
                       <td>{row.unitLabel}</td>
                       <td className={statusClass}>{row.status}</td>
+                      <td>{row.attemptNumber || '—'}</td>
                       <td>{formatDateTime(row.dateSet)}</td>
                       <td>{formatDateTime(row.dateSubmitted)}</td>
                       <td>{formatDateTime(row.dateResubmitted)}</td>

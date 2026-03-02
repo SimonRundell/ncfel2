@@ -140,7 +140,8 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
     (questionId, fileId, activity) => {
       const target = activity || selectedSubmission;
       if (!config?.api || !target?.id || !target?.studentId || !fileId) return '';
-      return `${config.api}/downloadAnswerFile.php?activityId=${target.id}&studentId=${target.studentId}&questionId=${questionId}&fileId=${encodeURIComponent(fileId)}`;
+      const attemptNumber = target?.currentAttempt || 1;
+      return `${config.api}/downloadAnswerFile.php?activityId=${target.id}&studentId=${target.studentId}&questionId=${questionId}&attemptNumber=${attemptNumber}&fileId=${encodeURIComponent(fileId)}`;
     },
     [config?.api, selectedSubmission]
   );
@@ -202,7 +203,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
         ),
         axios.post(
           `${config.api}/getAnswers.php`,
-          { activityId: activity.id, studentId: activity.studentId },
+            { activityId: activity.id, studentId: activity.studentId, attemptNumber: activity.currentAttempt || 1 },
           { headers: { 'Content-Type': 'application/json' } }
         ),
       ]);
@@ -309,8 +310,10 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
       normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
     });
 
-    const finalStatus = Object.values(normalizedOutcomes).some((v) => v === OUTCOME_NOT_ACHIEVED)
-      ? 'REDOING'
+    const hasNotAchieved = Object.values(normalizedOutcomes).some((v) => v === OUTCOME_NOT_ACHIEVED);
+    const attemptNumber = selectedSubmission?.currentAttempt || 1;
+    const finalStatus = hasNotAchieved
+      ? (attemptNumber >= 2 ? 'NOTPASSED' : 'REDOING')
       : 'PASSED';
     const marksPayload = {};
     questions.forEach((q) => {
@@ -341,12 +344,15 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
           studentId: selectedSubmission.studentId,
           courseId: selectedSubmission.courseId,
           unitId: selectedSubmission.unitId,
-          status: finalStatus,
+          status: finalStatus === 'REDOING' ? 'RETURNED' : finalStatus,
           dateSet: selectedSubmission.dateSet || null,
           dateSubmitted: selectedSubmission.dateSubmitted || null,
           dateMarked: new Date().toISOString().slice(0, 19).replace('T', ' '),
           dateResubmitted: selectedSubmission.dateResubmitted || null,
-          dateComplete: finalStatus === 'PASSED' ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null,
+          dateReturned: finalStatus === 'REDOING' ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null,
+          dateComplete: finalStatus === 'PASSED' || finalStatus === 'NOTPASSED'
+            ? new Date().toISOString().slice(0, 19).replace('T', ' ')
+            : null,
         },
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -422,6 +428,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
             >
               <div className="marking-submission-title">{studentMap[act.studentId] || `Student ${act.studentId}`}</div>
               <div className="marking-submission-meta">Status: {act.status}</div>
+              <div className="marking-submission-meta">Attempt: {act.currentAttempt || 1}</div>
               {act.dateSubmitted && (
                 <div className="marking-submission-meta">Submitted: {formatDateTime(act.dateSubmitted)}</div>
               )}
@@ -440,7 +447,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
             <div>
               <div className="marking-workspace-title">{studentMap[selectedSubmission.studentId] || 'Student'}</div>
               <div className="marking-workspace-meta">{unitMap[selectedSubmission.unitCode] || `Unit ${selectedSubmission.unitCode}`} · {courseMap[selectedSubmission.courseId] || `Course ${selectedSubmission.courseId}`}</div>
-              <div className="marking-workspace-meta">Current status: {selectedSubmission.status}</div>
+              <div className="marking-workspace-meta">Current status: {selectedSubmission.status} · Attempt {selectedSubmission.currentAttempt || 1}</div>
             </div>
             <div className="marking-workspace-actions">
               <button

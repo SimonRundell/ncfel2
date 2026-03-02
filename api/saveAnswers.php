@@ -10,17 +10,22 @@ $fileUploads = $receivedData['fileUploads'] ?? null; // expected map: questionId
 $incomingStatus = $receivedData['status'] ?? 'DRAFT';
 // answers.status enum currently does not include DRAFT; map DRAFT to INPROGRESS so inserts succeed.
 $status = $incomingStatus === 'DRAFT' ? 'INPROGRESS' : $incomingStatus;
+$attemptNumber = isset($receivedData['attemptNumber']) ? (int) $receivedData['attemptNumber'] : null;
 
 if ($activityId === null || $studentId === null || !is_array($answers)) {
     send_response('Missing or invalid activityId, studentId, or answers', 400);
 }
 
-log_info('saveAnswers request for activity ' . $activityId . ' student ' . $studentId . ' status ' . $status . ' (incoming ' . $incomingStatus . ') with ' . count($answers) . ' answers');
+if (!$attemptNumber) {
+    $attemptNumber = get_current_attempt((int) $activityId, (int) $studentId, $mysqli);
+}
+
+log_info('saveAnswers request for activity ' . $activityId . ' student ' . $studentId . ' attempt ' . $attemptNumber . ' status ' . $status . ' (incoming ' . $incomingStatus . ') with ' . count($answers) . ' answers');
 log_info('saveAnswers using database ' . ($config['dbname'] ?? 'unknown'));
 
 // Upsert one row per question so we retain questionId linkage.
-// Expect a unique key on (activityId, questionId, studentId) in the answers table.
-$query = 'INSERT INTO answers (activityId, studentId, questionId, answer, `references`, status, updatedAt, fileUploads) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?) ' .
+// Expect a unique key on (activityId, questionId, studentId, attemptNumber) in the answers table.
+$query = 'INSERT INTO answers (activityId, studentId, questionId, attemptNumber, answer, `references`, status, updatedAt, fileUploads) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?) ' .
          'ON DUPLICATE KEY UPDATE answer = VALUES(answer), `references` = VALUES(`references`), status = VALUES(status), fileUploads = IFNULL(VALUES(fileUploads), fileUploads), updatedAt = VALUES(updatedAt)';
 
 $stmt = $mysqli->prepare($query);
@@ -43,7 +48,7 @@ foreach ($answers as $questionId => $answerContent) {
 
     log_info('saveAnswers begin question ' . $qid . ' answerLen=' . strlen($answerJson) . ' refsCount=' . count($refList) . ' uploads=' . ($uploadsForQuestion === null ? 'kept' : count((array)$uploadsForQuestion)));
 
-    $stmt->bind_param('iiissss', $activityId, $studentId, $qid, $answerJson, $refsJson, $status, $uploadsJson);
+    $stmt->bind_param('iiiissss', $activityId, $studentId, $qid, $attemptNumber, $answerJson, $refsJson, $status, $uploadsJson);
 
     if (!$stmt->execute()) {
         log_info('Execute failed for question ' . $qid . ': ' . $stmt->error);
@@ -59,7 +64,7 @@ foreach ($answers as $questionId => $answerContent) {
 }
 
 $total = count($answers);
-log_info('saveAnswers persisted ' . $saved . ' of ' . $total . ' rows for activity ' . $activityId . ' student ' . $studentId . ' status ' . $status);
+log_info('saveAnswers persisted ' . $saved . ' of ' . $total . ' rows for activity ' . $activityId . ' student ' . $studentId . ' attempt ' . $attemptNumber . ' status ' . $status);
 
 $countResult = $mysqli->query('SELECT COUNT(*) AS c FROM answers');
 if ($countResult) {
@@ -77,7 +82,7 @@ $response = [
 ];
 
 if ($saved === 0) {
-    send_response('No answers were persisted. Check that answers table has columns (activityId, studentId, questionId, answer, references, status, updatedAt) and a UNIQUE KEY on (activityId, questionId, studentId).', 500);
+    send_response('No answers were persisted. Check that answers table has columns (activityId, studentId, questionId, attemptNumber, answer, references, status, updatedAt) and a UNIQUE KEY on (activityId, questionId, studentId, attemptNumber).', 500);
 }
 
 // Send email to teachers if status is SUBMITTED

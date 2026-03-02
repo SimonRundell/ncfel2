@@ -26,15 +26,16 @@ CREATE TABLE `answers`  (
   `activityId` int NOT NULL,
   `studentId` int NOT NULL,
   `questionId` int NOT NULL,
+  `attemptNumber` tinyint NOT NULL DEFAULT 1,
   `answer` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
   `outcome` enum('ACHIEVED','NOT ACHIEVED') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'NOT ACHIEVED',
   `comment` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
   `references` json NULL COMMENT 'json of references',
-  `status` enum('NOTSET','INPROGRESS','SUBMITTED','INMARKING','REDOING','RESUBMITTED','INREMARKING','PASSED','NOTPASSED','DISCONTINUED') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'NOTSET',
+  `status` enum('NOTSET','INPROGRESS','SUBMITTED','INMARKING', 'RETURNED','REDOING','RESUBMITTED','INREMARKING','PASSED','NOTPASSED','DISCONTINUED') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'NOTSET',
   `updatedAt` datetime NULL DEFAULT NULL,
   `fileUploads` json NULL COMMENT 'json of fileuploads',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uq_answers_activity_student_question`(`activityId` ASC, `studentId` ASC, `questionId` ASC) USING BTREE
+  UNIQUE INDEX `uq_answers_activity_student_question_attempt`(`activityId` ASC, `studentId` ASC, `questionId` ASC, `attemptNumber` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 200 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 -- ----------------------------
 
@@ -64,10 +65,12 @@ CREATE TABLE `currentactivity`  (
   `courseId` int NOT NULL,
   `unitId` int NOT NULL,
   `assessorId` int NULL DEFAULT NULL,
-  `status` enum('NOTSET','INPROGRESS','SUBMITTED','INMARKING','REDOING','RESUBMITTED','INREMARKING','PASSED','NOTPASSED','DISCONTINUED') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'NOTSET',
+  `currentAttempt` tinyint NOT NULL DEFAULT 1,
+  `status` enum('NOTSET','INPROGRESS','SUBMITTED','INMARKING', 'RETURNED','REDOING','RESUBMITTED','INREMARKING','PASSED','NOTPASSED','DISCONTINUED') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'NOTSET',
   `dateSet` datetime NULL DEFAULT NULL,
   `dateSubmitted` datetime NULL DEFAULT NULL,
   `dateMarked` datetime NULL DEFAULT NULL,
+  `dateReturned` datetime NULL DEFAULT NULL,
   `dateResubmitted` datetime NULL DEFAULT NULL,
   `dateComplete` datetime NULL DEFAULT NULL,
   `assessorComment` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,

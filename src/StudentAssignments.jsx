@@ -108,6 +108,7 @@ const StudentAssignments = ({ config, currentUser, onError }) => {
             <div className="student-assignment-value">{unitMap[act.unitId] || `Unit ${act.unitId}`}</div>
             <div className="student-assignment-meta">Course: {courseMap[act.courseId] || act.courseId}</div>
             <div className="student-assignment-meta">Status: {act.status}</div>
+            <div className="student-assignment-meta">Attempt: {act.currentAttempt || 1}</div>
             {act.dateSet && (
               <div className="student-assignment-meta">Set: {act.dateSet}</div>
             )}

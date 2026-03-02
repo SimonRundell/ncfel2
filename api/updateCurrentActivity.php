@@ -46,11 +46,25 @@ if (array_key_exists('dateMarked', $receivedData)) {
     $params[] = &$dateMarked;
 }
 
+if (array_key_exists('dateReturned', $receivedData)) {
+    $dateReturned = $receivedData['dateReturned'];
+    $setClauses[] = 'dateReturned = ?';
+    $types .= 's';
+    $params[] = &$dateReturned;
+}
+
 if (array_key_exists('dateResubmitted', $receivedData)) {
     $dateResubmitted = $receivedData['dateResubmitted'];
     $setClauses[] = 'dateResubmitted = ?';
     $types .= 's';
     $params[] = &$dateResubmitted;
+}
+
+if (array_key_exists('currentAttempt', $receivedData)) {
+    $currentAttempt = (int) $receivedData['currentAttempt'];
+    $setClauses[] = 'currentAttempt = ?';
+    $types .= 'i';
+    $params[] = &$currentAttempt;
 }
 
 if (array_key_exists('dateComplete', $receivedData)) {

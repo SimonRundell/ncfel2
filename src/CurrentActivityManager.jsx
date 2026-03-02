@@ -7,6 +7,7 @@ const statusOptions = [
   'INPROGRESS',
   'SUBMITTED',
   'INMARKING',
+  'RETURNED',
   'REDOING',
   'RESUBMITTED',
   'INREMARKING',
