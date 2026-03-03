@@ -43,6 +43,68 @@ All API endpoints return JSON with this structure:
 
 ## Authentication
 
+### API JWT (Service Auth)
+
+All API endpoints (except `/api/authToken.php`) require an `Authorization` header
+with a Bearer token. The frontend requests a short-lived JWT using service
+credentials from `/.config.json`, then attaches the token to every API call.
+
+**Authorization Header:**
+```
+Authorization: Bearer <jwt>
+```
+
+**Backend Auth Config (`/api/.config.json`):**
+```json
+{
+  "jwtSecret": "<secret>",
+  "jwtIssuer": "ncfel2",
+  "jwtAudience": "ncfel2-api",
+  "jwtTtlMinutes": 60,
+  "apiAuthUsers": [
+    {
+      "username": "admin",
+      "passwordHash": "<bcrypt hash>",
+      "role": "admin"
+    }
+  ]
+}
+```
+
+**Apache Note:** ensure the `Authorization` header is forwarded to PHP
+(see `/api/.htaccess` for the rewrite rules used in production).
+
+### POST /api/authToken.php
+Issue a JWT for API access using service credentials.
+
+**Request Body:**
+```json
+{
+  "username": "admin",
+  "password": "<apiAuthPassword>"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "status_code": 200,
+  "message": {
+    "token": "<jwt>",
+    "tokenType": "Bearer",
+    "expiresAt": 1772571764
+  }
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "status_code": 401,
+  "message": "Unauthorized"
+}
+```
+
 ### POST /api/getLogin.php
 Authenticate user and retrieve account information.
 

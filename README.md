@@ -532,8 +532,12 @@ See JSDoc comments in each file for detailed component documentation.
 
 ### Authentication
 - MD5 password hashing (consider upgrading to bcrypt)
-- Session-based authentication via localStorage
+- API JWT stored in localStorage (`ncfel2_api_token`)
 - Email-based usernames (unique constraint)
+- Service credentials in `/.config.json` used to request tokens
+- Bearer token required for all API endpoints (except `/api/authToken.php`)
+
+**Apache note:** ensure `/api/.htaccess` forwards the `Authorization` header to PHP.
 
 ### Authorization
 - Role-based access control (status field)

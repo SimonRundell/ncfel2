@@ -4,6 +4,7 @@
  * This is the root component that orchestrates the entire application. It handles:
  * - Configuration loading from .config.json
  * - User authentication state management
+ * - API JWT initialization for backend requests
  * - Message notifications (success/error)
  * - Conditional rendering based on user role and login status
  * - Role-based view routing (Admin Panel vs Student Assignments)
@@ -25,7 +26,7 @@ import AssessmentReport from './AssessmentReport.jsx';
 import MarkingDashboard from './MarkingDashboard.jsx';
 import CMFloatAd from './CMFloatAd.jsx';
 import axios from 'axios';
-import { initApiAuth, clearApiAuth } from './apiAuth';
+import { initApiAuth, clearApiAuth, attachApiAuthInterceptor } from './apiAuth';
 
 /**
  * App Component - Root component of the NCFE Level 2 Certificate System
@@ -93,6 +94,13 @@ function App() {
   const mustChangePassword = Boolean(currentUser?.changeLogin);
   const prevMustChangePassword = useRef(mustChangePassword);
 
+  /**
+   * API Authentication Initialization
+   *
+   * Loads a short-lived API JWT using service credentials from /.config.json,
+   * then attaches axios interceptors to inject Authorization headers and
+   * retry once on 401 responses.
+   */
   useEffect(() => {
     if (!currentUser) return;
     
@@ -155,6 +163,7 @@ function App() {
     if (!config?.api) return;
     let isActive = true;
 
+    attachApiAuthInterceptor(config);
     initApiAuth(config)
       .then(() => {
         if (isActive) setApiReady(true);

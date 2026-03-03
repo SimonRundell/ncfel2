@@ -82,6 +82,47 @@ VALUES ('dev@example.com', '81dc9bdb52d04dc20036dbd8313ed055', 'Developer', 3);
 -- Password is '1234' (MD5 hashed)
 ```
 
+## Authentication and JWT (Important)
+
+The API is protected by a short-lived JWT used for all requests (except
+`/api/authToken.php`). The frontend requests a token using service credentials
+from `/.config.json` and sends it as a Bearer token on every API call.
+
+**Frontend config (`/.config.json`):**
+```json
+{
+  "api": "http://localhost/api",
+  "apiAuthUser": "admin",
+  "apiAuthPassword": "replace-with-strong-password"
+}
+```
+
+**Backend config (`/api/.config.json`):**
+```json
+{
+  "jwtSecret": "<secret>",
+  "jwtIssuer": "ncfel2",
+  "jwtAudience": "ncfel2-api",
+  "jwtTtlMinutes": 60,
+  "apiAuthUsers": [
+    {
+      "username": "admin",
+      "passwordHash": "<bcrypt hash>",
+      "role": "admin"
+    }
+  ]
+}
+```
+
+**Where it lives in code:**
+- Token request + storage: `src/apiAuth.js` (localStorage key `ncfel2_api_token`)
+- Initialization: `src/App.jsx` (calls `initApiAuth` + interceptors)
+- Login request: `src/login.jsx` (relies on Authorization header)
+
+**Apache header forwarding:**
+If you see 401 responses with a valid token, Apache may be stripping the
+`Authorization` header. Ensure `/api/.htaccess` is deployed so PHP sees it.
+
 ## Understanding the Codebase
 
 ### Application Flow

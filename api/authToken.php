@@ -21,7 +21,6 @@ if ($username === '' || $password === '') {
 
 $role = null;
 if (!verify_api_user($username, $password, $config, $role)) {
-    header('WWW-Authenticate: Basic realm="NCFE API"');
     send_response('Unauthorized', 401);
 }
 

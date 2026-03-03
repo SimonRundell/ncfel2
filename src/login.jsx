@@ -11,9 +11,10 @@
  * Authentication Flow:
  * 1. User enters email (used as username) and password
  * 2. Password is hashed with MD5 client-side
- * 3. Credentials sent to /api/getLogin.php
- * 4. On success, user object stored in parent state (App.jsx)
- * 5. On failure, error message displayed
+ * 3. API JWT is acquired in App.jsx and attached as Authorization header
+ * 4. Credentials sent to /api/getLogin.php
+ * 5. On success, user object stored in parent state (App.jsx)
+ * 6. On failure, error message displayed
  * 
  * Password Reset Flow:
  * 1. User clicks "Forgotten your password?"

@@ -59,6 +59,12 @@ App.jsx (Root)
 5. Renders Menu + appropriate view based on user.status and activeView
 6. Handles global error/success messages
 
+**API Authentication:**
+- `App.jsx` calls `initApiAuth(config)` to obtain a JWT from `/api/authToken.php`
+- The token is stored in localStorage (`ncfel2_api_token`)
+- Axios interceptors inject `Authorization: Bearer <token>` on requests
+- 401 responses trigger a one-time token refresh and retry
+
 **Props**: None (root component)
 
 **Key Features:**

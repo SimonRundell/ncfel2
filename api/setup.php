@@ -292,7 +292,6 @@ function enforce_auth_if_needed($config) {
 
     $authHeader = get_auth_header();
     if (!$authHeader) {
-        header('WWW-Authenticate: Basic realm="NCFE API"');
         send_response('Unauthorized', 401);
     }
 
@@ -320,7 +319,6 @@ function enforce_auth_if_needed($config) {
 
         $role = null;
         if (!verify_api_user($username, $password, $config, $role)) {
-            header('WWW-Authenticate: Basic realm="NCFE API"');
             send_response('Unauthorized', 401);
         }
 
