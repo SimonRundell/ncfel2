@@ -1,4 +1,16 @@
 <?php
+/**
+ * Persist marking outcomes for an activity attempt.
+ * Updates answers.outcome/comment per question and sets answers.status to RETURNED
+ * when a redo is required. Also updates currentactivity status and attempt tracking.
+ *
+ * Request body:
+ * - activityId (int, required)
+ * - studentId (int, required)
+ * - marks (object, required): questionId => { outcome, comment }
+ * - assessorComment (string, optional)
+ * - finalStatus (string, required): PASSED | REDOING | NOTPASSED
+ */
 include 'setup.php';
 
 $activityId = isset($receivedData['activityId']) ? (int) $receivedData['activityId'] : null;

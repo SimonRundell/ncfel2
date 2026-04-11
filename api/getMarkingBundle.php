@@ -1,4 +1,22 @@
 <?php
+/**
+ * Fetch a marking bundle for a specific activity attempt.
+ * Returns questions, answers, outcomes, comments, uploads, and attempt metadata
+ * in one call to keep marking and assessment views consistent.
+ *
+ * Request body:
+ * - activityId (int, required)
+ * - studentId (int, required)
+ * - attemptNumber (int, optional; defaults to current attempt)
+ *
+ * Response message.data:
+ * - questions: array of { id, QuestionRef, Question, uploadPermitted, MCAnswer }
+ * - answers: map questionId => answer (JSON string or MC selection index)
+ * - outcomes: map questionId => ACHIEVED | NOT ACHIEVED
+ * - comments: map questionId => string
+ * - fileUploads: map questionId => array of upload metadata
+ * - attemptNumber: int
+ */
 include 'setup.php';
 
 $activityId = $receivedData['activityId'] ?? null;

@@ -1,4 +1,21 @@
 <?php
+/**
+ * Persist student answers for an activity attempt.
+ * Upserts one row per question and updates answers.status based on submission state.
+ *
+ * Request body:
+ * - activityId (int, required)
+ * - studentId (int, required)
+ * - answers (object, required): questionId => answer JSON (open) or option index (MC)
+ * - references (object, optional): questionId => array of URLs
+ * - fileUploads (object, optional): questionId => array of upload metadata
+ * - status (string, optional): DRAFT | INPROGRESS | SUBMITTED | RESUBMITTED
+ * - attemptNumber (int, optional; defaults to current attempt)
+ *
+ * Notes:
+ * - DRAFT maps to INPROGRESS for answers.status.
+ * - SUBMITTED/RESUBMITTED updates all answers in the attempt to the same status.
+ */
 include 'setup.php';
 
 $activityId = $receivedData['activityId'] ?? null;
