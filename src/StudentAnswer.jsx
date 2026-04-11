@@ -29,6 +29,28 @@ const ToolbarButton = ({ icon, label, isActive, onClick, disabled }) => (
   </button>
 );
 
+const parseMultiChoiceQuestion = (html) => {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html || '', 'text/html');
+    const lists = Array.from(doc.querySelectorAll('ol'));
+    if (lists.length !== 1) {
+      return { promptHtml: doc.body.innerHTML.trim(), options: [], error: 'Expected exactly one numbered list.' };
+    }
+    const list = lists[0];
+    const items = Array.from(list.children).filter((node) => node.tagName === 'LI');
+    list.remove();
+    const promptHtml = doc.body.innerHTML.trim();
+    const options = items.map((item, idx) => ({ index: idx + 1, html: item.innerHTML }));
+    if (!options.length) {
+      return { promptHtml, options: [], error: 'Numbered list has no options.' };
+    }
+    return { promptHtml, options, error: '' };
+  } catch {
+    return { promptHtml: html || '', options: [], error: 'Could not parse options.' };
+  }
+};
+
 const QuestionAnswerItem = ({
   question,
   savedAnswer,
@@ -312,6 +334,49 @@ const QuestionAnswerItem = ({
   );
 };
 
+const MultiChoiceItem = ({
+  question,
+  selectedIndex,
+  disabled,
+  onSelect,
+  isSaving,
+}) => {
+  const { promptHtml, options, error } = parseMultiChoiceQuestion(question.Question || '');
+
+  return (
+    <div className="qa-block">
+      <div className="qa-question">
+        <span className="question-ref">{question.QuestionRef || `Q${question.id}`}</span>
+        {promptHtml && <span className="question-text" dangerouslySetInnerHTML={{ __html: promptHtml }} />}
+      </div>
+      <div className="qa-answer">
+        {error && <div className="answer-meta error">{error}</div>}
+        {!error && (
+          <div className="mc-options">
+            {options.map((opt) => (
+              <label className="mc-option" key={`${question.id}-opt-${opt.index}`}>
+                <input
+                  type="radio"
+                  name={`mc-${question.id}`}
+                  checked={Number(selectedIndex) === opt.index}
+                  onChange={() => onSelect(opt.index)}
+                  disabled={disabled}
+                />
+                <span className="mc-option-label" dangerouslySetInnerHTML={{ __html: opt.html }} />
+              </label>
+            ))}
+          </div>
+        )}
+        {!error && (
+          <div className="mc-saving" aria-live="polite">
+            {isSaving ? 'Saving…' : 'Saved'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /**
  * Student answer workspace for a specific activity.
  * Loads questions, manages rich-text editors, persists drafts locally, submits answers, and tracks outcomes/comments.
@@ -335,6 +400,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
   const [questionsError, setQuestionsError] = useState('');
   const [courseName, setCourseName] = useState('');
   const [unitName, setUnitName] = useState('');
+  const [assessmentType, setAssessmentType] = useState('Open');
   const [refsMap, setRefsMap] = useState({}); // questionId -> array of refs
   const [blockMessage, setBlockMessage] = useState('');
   const [activityStatus, setActivityStatus] = useState(activity?.status || 'INPROGRESS');
@@ -358,11 +424,16 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
   const editorsRef = useRef({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [lightbox, setLightbox] = useState(null);
+  const mcSaveTimer = useRef(null);
+  const [mcSaving, setMcSaving] = useState(false);
 
   useEffect(() => {
     return () => {
       if (blockTimer.current) {
         clearTimeout(blockTimer.current);
+      }
+      if (mcSaveTimer.current) {
+        clearTimeout(mcSaveTimer.current);
       }
     };
   }, []);
@@ -436,18 +507,18 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
       });
       return next;
     });
-
-    setRefsMap((prev) => {
-      const next = { ...prev };
-      questions.forEach((q) => {
-        if (Array.isArray(next[q.id]) && next[q.id].length) {
-          next[q.id] = next[q.id].slice(0, 5);
-          return;
-        }
-        next[q.id] = [''];
+    if (assessmentType !== 'MultiChoice') {
+      setRefsMap((prev) => {
+        const next = { ...prev };
+        questions.forEach((q) => {
+          if (Array.isArray(next[q.id]) && next[q.id].length) {
+            next[q.id] = next[q.id].slice(0, 5);
+            return;
+          }
+          next[q.id] = [''];
+        });
+        return next;
       });
-      return next;
-    });
 
       setFileUploads((prev) => {
         const next = { ...prev };
@@ -456,7 +527,8 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         });
         return next;
       });
-  }, [questions, questionStorageKey, normalizeUploadsForQuestion]);
+    }
+  }, [questions, questionStorageKey, normalizeUploadsForQuestion, assessmentType]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -525,6 +597,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         const data = normalizeListResponse(response.data);
         if (Array.isArray(data) && data.length) {
           setUnitName(data[0].unitName || '');
+          setAssessmentType(data[0].assessmentType || 'Open');
         }
       } catch {
         // silent fallback to id
@@ -755,6 +828,36 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     );
   };
 
+  const saveMcDraft = async (nextAnswers) => {
+    if (!config?.api || !activity?.id || !activity?.studentId) return;
+    setMcSaving(true);
+    const answersPayload = {};
+    questions.forEach((q) => {
+      answersPayload[q.id] = nextAnswers[q.id] ?? null;
+    });
+    localStorage.setItem(storageKey, JSON.stringify(answersPayload));
+    const payload = {
+      activityId: activity.id,
+      studentId: activity.studentId,
+      answers: answersPayload,
+      references: {},
+      fileUploads: {},
+      status: 'INPROGRESS',
+      attemptNumber,
+    };
+    const response = await axios.post(
+      `${config.api}/saveAnswers.php`,
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    if (activityStatus !== 'INPROGRESS') {
+      await updateActivityStatus('INPROGRESS');
+      setActivityStatus('INPROGRESS');
+      setStatusText(displayStatus('INPROGRESS'));
+    }
+    setMcSaving(false);
+  };
+
   const handleSubmit = async () => {
     if (!config?.api || !activity?.id) return;
     setLoading(true);
@@ -764,32 +867,46 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       // Persist draft locally (placeholder until backend storage is added)
       const perQuestionRefs = {};
-      Object.keys(refsMap).forEach((qid) => {
-        const cleaned = (refsMap[qid] || []).map((r) => (r || '').trim()).filter(Boolean);
-        perQuestionRefs[qid] = cleaned;
-      });
-      localStorage.setItem(refsKey, JSON.stringify(perQuestionRefs));
+      if (assessmentType !== 'MultiChoice') {
+        Object.keys(refsMap).forEach((qid) => {
+          const cleaned = (refsMap[qid] || []).map((r) => (r || '').trim()).filter(Boolean);
+          perQuestionRefs[qid] = cleaned;
+        });
+        localStorage.setItem(refsKey, JSON.stringify(perQuestionRefs));
+      }
 
       const answersPayload = {};
       questions.forEach((q) => {
         const ed = editorsRef.current[q.id];
-        if (ed) {
-          answersPayload[q.id] = ed.getJSON();
+        if (assessmentType === 'MultiChoice' || !ed) {
+          answersPayload[q.id] = answers[q.id] ?? null;
+          return;
         }
+        answersPayload[q.id] = ed.getJSON();
       });
       localStorage.setItem(storageKey, JSON.stringify(answersPayload));
 
-      await axios.post(
+      if (assessmentType === 'MultiChoice') {
+        const missing = questions.filter((q) => answersPayload[q.id] === null || answersPayload[q.id] === undefined);
+        if (missing.length > 0) {
+          if (onError) onError('Select an answer for every question before submitting.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      const payload = {
+        activityId: activity.id,
+        studentId: activity.studentId,
+        answers: answersPayload,
+        references: perQuestionRefs,
+        fileUploads: assessmentType === 'MultiChoice' ? {} : serializeFileUploads(),
+        status: nextStatus,
+        attemptNumber,
+      };
+      const response = await axios.post(
         `${config.api}/saveAnswers.php`,
-        {
-          activityId: activity.id,
-          studentId: activity.studentId,
-          answers: answersPayload,
-          references: perQuestionRefs,
-          fileUploads: serializeFileUploads(),
-          status: nextStatus,
-          attemptNumber,
-        },
+        payload,
         { headers: { 'Content-Type': 'application/json' } }
       );
       setAnswers(answersPayload);
@@ -817,18 +934,22 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
       const isRedoAttempt = attemptNumber >= 2 || activityStatus === 'REDOING' || activityStatus === 'RETURNED';
       const draftStatus = isRedoAttempt ? 'REDOING' : 'INPROGRESS';
       const perQuestionRefs = {};
-      Object.keys(refsMap).forEach((qid) => {
-        const cleaned = (refsMap[qid] || []).map((r) => (r || '').trim()).filter(Boolean);
-        perQuestionRefs[qid] = cleaned;
-      });
-      localStorage.setItem(refsKey, JSON.stringify(perQuestionRefs));
+      if (assessmentType !== 'MultiChoice') {
+        Object.keys(refsMap).forEach((qid) => {
+          const cleaned = (refsMap[qid] || []).map((r) => (r || '').trim()).filter(Boolean);
+          perQuestionRefs[qid] = cleaned;
+        });
+        localStorage.setItem(refsKey, JSON.stringify(perQuestionRefs));
+      }
 
       const answersPayload = {};
       questions.forEach((q) => {
         const ed = editorsRef.current[q.id];
-        if (ed) {
-          answersPayload[q.id] = ed.getJSON();
+        if (assessmentType === 'MultiChoice' || !ed) {
+          answersPayload[q.id] = answers[q.id] ?? null;
+          return;
         }
+        answersPayload[q.id] = ed.getJSON();
       });
       localStorage.setItem(storageKey, JSON.stringify(answersPayload));
 
@@ -837,13 +958,10 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         studentId: activity.studentId,
         answers: answersPayload,
         references: perQuestionRefs,
-        fileUploads: serializeFileUploads(),
+        fileUploads: assessmentType === 'MultiChoice' ? {} : serializeFileUploads(),
         status: 'DRAFT',
         attemptNumber,
       };
-
-      console.log('Saving draft with data:', jsonData);
-
       await axios.post(`${config.api}/saveAnswers.php`, jsonData, {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -941,30 +1059,59 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
             )}
             {!questionsLoading && !questionsError && questions.length > 0 && (
               <div className="question-scroll qa-list">
-                {questions.map((q) => (
-                  <QuestionAnswerItem
-                    key={q.id}
-                    question={q}
-                    savedAnswer={answers[q.id]}
-                    disabled={!isQuestionEditable(q.id)}
-                    outcome={outcomes[q.id]}
-                    comment={markerComments[q.id]}
-                    refs={refsMap[q.id]}
-                    onRefChange={(idx, value) => handleRefChange(q.id, idx, value)}
-                    onAddRef={() => addReferenceField(q.id)}
-                    onRemoveRef={(idx) => removeReferenceField(q.id, idx)}
-                    refValidation={validateRefs(q.id)}
-                    activityStatus={activityStatus}
-                    questionStorageKey={questionStorageKey}
-                    showBlocked={showBlocked}
-                    editorsRef={editorsRef}
-                    uploads={fileUploads[q.id]}
-                    onUploadFiles={(files) => handleFileUpload(q.id, files)}
-                    onDeleteFile={(fileId) => handleFileDelete(q.id, fileId)}
-                    uploading={!!uploadingMap[q.id]}
-                    onOpenLightbox={openLightbox}
-                  />
-                ))}
+                {questions.map((q) => {
+                  if (assessmentType === 'MultiChoice') {
+                    return (
+                      <MultiChoiceItem
+                        key={q.id}
+                        question={q}
+                        selectedIndex={answers[q.id]}
+                        disabled={!isQuestionEditable(q.id)}
+                        isSaving={mcSaving}
+                        onSelect={(index) => {
+                          setAnswers((prev) => {
+                            const next = { ...prev, [q.id]: index };
+                            localStorage.setItem(questionStorageKey(q.id), JSON.stringify(index));
+                            if (mcSaveTimer.current) clearTimeout(mcSaveTimer.current);
+                            setMcSaving(true);
+                            mcSaveTimer.current = setTimeout(() => {
+                              saveMcDraft(next).catch((error) => {
+                                console.error('Error saving MC draft', error);
+                                if (onError) onError('Error saving multi-choice answer');
+                                setMcSaving(false);
+                              });
+                            }, 300);
+                            return next;
+                          });
+                        }}
+                      />
+                    );
+                  }
+                  return (
+                    <QuestionAnswerItem
+                      key={q.id}
+                      question={q}
+                      savedAnswer={answers[q.id]}
+                      disabled={!isQuestionEditable(q.id)}
+                      outcome={outcomes[q.id]}
+                      comment={markerComments[q.id]}
+                      refs={refsMap[q.id]}
+                      onRefChange={(idx, value) => handleRefChange(q.id, idx, value)}
+                      onAddRef={() => addReferenceField(q.id)}
+                      onRemoveRef={(idx) => removeReferenceField(q.id, idx)}
+                      refValidation={validateRefs(q.id)}
+                      activityStatus={activityStatus}
+                      questionStorageKey={questionStorageKey}
+                      showBlocked={showBlocked}
+                      editorsRef={editorsRef}
+                      uploads={fileUploads[q.id]}
+                      onUploadFiles={(files) => handleFileUpload(q.id, files)}
+                      onDeleteFile={(fileId) => handleFileDelete(q.id, fileId)}
+                      uploading={!!uploadingMap[q.id]}
+                      onOpenLightbox={openLightbox}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>

@@ -62,26 +62,24 @@ useEffect(() => {
         setLoading(true)
         
         try {
-            // Fetch questions and answers in parallel
-            const [questionsResponse, answersResponse] = await Promise.all([
-                axios.post(
-                    `${config.api}/getQuestions.php`,
-                    { unitId: ass.unitId, courseId: ass.courseId },
-                    { headers: { 'Content-Type': 'application/json' } }
-                ),
-                axios.post(
-                    `${config.api}/getAnswers.php`,
-                    { activityId: ass.id, studentId: id },
-                    { headers: { 'Content-Type': 'application/json' } }
-                )
-            ])
-            
-            const questionsList = normalizeListResponse(questionsResponse.data)
-            const answersData = answersResponse.data?.data || {}
-            
-            setQuestions(Array.isArray(questionsList) ? questionsList : [])
-            setAnswers(answersData.outcomes || {})
-            
+            const attemptNumber = ass.attemptNumber ?? ass.currentAttempt ?? 1
+            const bundleResponse = await axios.post(
+                `${config.api}/getMarkingBundle.php`,
+                { activityId: ass.id, studentId: id, attemptNumber },
+                { headers: { 'Content-Type': 'application/json' } }
+            )
+
+            const bundle = bundleResponse.data?.message?.data || bundleResponse.data?.data || {}
+            const questionsList = Array.isArray(bundle.questions)
+                ? bundle.questions.map((q) => ({
+                    ...q,
+                    uploadPermitted: Number(q?.uploadPermitted ?? q?.uploadpermitted ?? 0) === 1,
+                }))
+                : []
+
+            setQuestions(questionsList)
+            setAnswers(bundle.outcomes || {})
+
             // Fetch assessor name if assessorId is available
             if (ass.assessorId) {
                 try {
@@ -217,7 +215,7 @@ useEffect(() => {
         let questionsHTML = questions.map(question => {
             return `<th style="text-align: center; min-width: 50px;">${question.QuestionRef}</th>`
         }).join('')
-        
+
         let answersHTML = questions.map(question => {
             const outcome = answers[question.id]
             const achieved = outcome === 'achieved' || outcome === 'ACHIEVED'

@@ -20,7 +20,7 @@ if ($courseId) {
     $types .= 'i';
 }
 
-$query = 'SELECT * FROM unit';
+$query = 'SELECT id, courseid, unitName, unitCode, assessmentType FROM unit';
 if (!empty($conditions)) {
     $query .= ' WHERE ' . implode(' AND ', $conditions);
 }

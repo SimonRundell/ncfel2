@@ -9,7 +9,13 @@ if (!isset($receivedData['unitCode']) || trim($receivedData['unitCode']) === '')
     send_response('Missing unitCode', 400);
 }
 
-$query = 'INSERT INTO unit (courseid, unitName, unitCode) VALUES (?, ?, ?)';
+$assessmentType = $receivedData['assessmentType'] ?? 'Open';
+$assessmentType = is_string($assessmentType) ? trim($assessmentType) : 'Open';
+if ($assessmentType !== 'Open' && $assessmentType !== 'MultiChoice') {
+    send_response('Invalid assessmentType. Use Open or MultiChoice', 400);
+}
+
+$query = 'INSERT INTO unit (courseid, unitName, unitCode, assessmentType) VALUES (?, ?, ?, ?)';
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {
@@ -20,7 +26,7 @@ if (!$stmt) {
 $courseId = (int) $receivedData['courseid'];
 $unitName = trim($receivedData['unitName']);
 $unitCode = trim($receivedData['unitCode']);
-$stmt->bind_param('iss', $courseId, $unitName, $unitCode);
+$stmt->bind_param('isss', $courseId, $unitName, $unitCode, $assessmentType);
 
 if (!$stmt->execute()) {
     log_info('Execute failed: ' . $stmt->error);

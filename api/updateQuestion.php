@@ -11,12 +11,17 @@ $unitId = (int) $receivedData['unitid'];
 $questionRef = isset($receivedData['QuestionRef']) ? trim($receivedData['QuestionRef']) : '';
 $questionText = trim($receivedData['Question']);
 $uploadPermitted = isset($receivedData['uploadPermitted']) ? (int) $receivedData['uploadPermitted'] : 0;
+$mcAnswer = $receivedData['MCAnswer'] ?? null;
+$mcAnswer = $mcAnswer === null || $mcAnswer === '' ? null : (int) $mcAnswer;
+if ($mcAnswer !== null && $mcAnswer < 1) {
+    send_response('Invalid MCAnswer. Use a 1-based index.', 400);
+}
 
 if ($questionText === '') {
     send_response('Question text cannot be empty', 400);
 }
 
-$query = 'UPDATE questions SET courseid = ?, unitid = ?, QuestionRef = ?, Question = ?, uploadPermitted = ? WHERE id = ?';
+$query = 'UPDATE questions SET courseid = ?, unitid = ?, QuestionRef = ?, Question = ?, uploadPermitted = ?, MCAnswer = ? WHERE id = ?';
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {
@@ -25,7 +30,7 @@ if (!$stmt) {
 }
 
 $questionRef = $questionRef !== '' ? $questionRef : null;
-$stmt->bind_param('iissii', $courseId, $unitId, $questionRef, $questionText, $uploadPermitted, $id);
+$stmt->bind_param('iissiii', $courseId, $unitId, $questionRef, $questionText, $uploadPermitted, $mcAnswer, $id);
 
 if (!$stmt->execute()) {
     log_info('Execute failed: ' . $stmt->error);

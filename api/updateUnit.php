@@ -9,7 +9,13 @@ if (!isset($receivedData['unitCode'])) {
     send_response('Missing unitCode', 400);
 }
 
-$query = 'UPDATE unit SET courseid = ?, unitName = ?, unitCode = ? WHERE id = ?';
+$assessmentType = $receivedData['assessmentType'] ?? 'Open';
+$assessmentType = is_string($assessmentType) ? trim($assessmentType) : 'Open';
+if ($assessmentType !== 'Open' && $assessmentType !== 'MultiChoice') {
+    send_response('Invalid assessmentType. Use Open or MultiChoice', 400);
+}
+
+$query = 'UPDATE unit SET courseid = ?, unitName = ?, unitCode = ?, assessmentType = ? WHERE id = ?';
 $stmt = $mysqli->prepare($query);
 
 if (!$stmt) {
@@ -21,7 +27,7 @@ $courseId = (int) $receivedData['courseid'];
 $unitName = trim($receivedData['unitName']);
 $unitCode = trim($receivedData['unitCode']);
 $id = (int) $receivedData['id'];
-$stmt->bind_param('issi', $courseId, $unitName, $unitCode, $id);
+$stmt->bind_param('isssi', $courseId, $unitName, $unitCode, $assessmentType, $id);
 
 if (!$stmt->execute()) {
     log_info('Execute failed: ' . $stmt->error);

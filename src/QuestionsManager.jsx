@@ -1,6 +1,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+
+const icons = {
+  bold: <img src="/images/bold.png" alt="Bold" width="28" height="28" />,
+  italic: <img src="/images/italic.png" alt="Italic" width="28" height="28" />,
+  bullet: <img src="/images/unorderedlist.png" alt="Bullet list" width="28" height="28" />,
+  ordered: <img src="/images/orderedlist.png" alt="Ordered list" width="28" height="28" />,
+  undo: <img src="/images/undo.png" alt="Undo" width="28" height="28" />,
+  redo: <img src="/images/redo.png" alt="Redo" width="28" height="28" />,
+};
 
 const emptyForm = {
   id: null,
@@ -9,6 +21,7 @@ const emptyForm = {
   QuestionRef: '',
   Question: '',
   uploadPermitted: false,
+  MCAnswer: '',
 };
 
 /**
@@ -41,6 +54,23 @@ const QuestionsManager = ({ config, onSuccess, onError }) => {
   const [form, setForm] = useState(emptyForm);
   const [questionToDelete, setQuestionToDelete] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [mcInfo, setMcInfo] = useState('');
+  const [mcError, setMcError] = useState('');
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: 'Enter the question prompt',
+        emptyEditorClass: 'is-editor-empty',
+      }),
+    ],
+    content: form.Question || '',
+    onUpdate: ({ editor: ed }) => {
+      const html = ed.getHTML();
+      setForm((prev) => ({ ...prev, Question: html }));
+    },
+  });
 
   const loadCourses = useCallback(async () => {
     if (!config?.api) return;
@@ -95,6 +125,7 @@ const QuestionsManager = ({ config, onSuccess, onError }) => {
         {
           unitId: Number(filterUnitId),
           courseId: filterCourseId ? Number(filterCourseId) : undefined,
+          includeMCAnswer: true,
         },
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -144,6 +175,7 @@ const QuestionsManager = ({ config, onSuccess, onError }) => {
       courseid: filterCourseId,
       unitid: filterUnitId,
     });
+    editor?.commands.setContent('', true);
     setShowEditor(true);
   };
 
@@ -159,8 +191,41 @@ const QuestionsManager = ({ config, onSuccess, onError }) => {
       QuestionRef: question.QuestionRef || '',
       Question: question.Question || '',
       uploadPermitted: Number(question.uploadPermitted) === 1,
+      MCAnswer: question.MCAnswer ?? '',
     });
+    editor?.commands.setContent(question.Question || '', true);
     setShowEditor(true);
+  };
+
+  useEffect(() => {
+    if (!editor || !showEditor) return;
+    const currentHtml = editor.getHTML();
+    if ((form.Question || '') !== currentHtml) {
+      editor.commands.setContent(form.Question || '', true);
+    }
+  }, [editor, form.Question, showEditor]);
+
+  const selectedUnitId = showEditor ? form.unitid : filterUnitId;
+  const selectedUnit = units.find((unit) => String(unit.id) === String(selectedUnitId));
+  const isMultiChoice = (selectedUnit?.assessmentType || 'Open') === 'MultiChoice';
+
+  const analyzeOrderedList = (html) => {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html || '', 'text/html');
+      const lists = Array.from(doc.querySelectorAll('ol'));
+      if (lists.length === 0) {
+        return { count: 0, error: 'MultiChoice questions must include exactly one numbered list.' };
+      }
+      if (lists.length > 1) {
+        return { count: 0, error: 'Only one numbered list is allowed for MultiChoice questions.' };
+      }
+      const list = lists[0];
+      const items = Array.from(list.children).filter((node) => node.tagName === 'LI');
+      return { count: items.length, error: items.length ? '' : 'Numbered list needs at least one option.' };
+    } catch {
+      return { count: 0, error: 'Could not parse the question content.' };
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -178,6 +243,22 @@ const QuestionsManager = ({ config, onSuccess, onError }) => {
       Question: form.Question.trim(),
       uploadPermitted: form.uploadPermitted ? 1 : 0,
     };
+
+    if (isMultiChoice) {
+      const { count, error } = analyzeOrderedList(form.Question);
+      setMcInfo(count ? `${count} option${count === 1 ? '' : 's'} detected.` : '');
+      setMcError(error);
+      const answerValue = form.MCAnswer === '' ? null : Number(form.MCAnswer);
+      if (error) {
+        onError(error);
+        return;
+      }
+      if (!answerValue || Number.isNaN(answerValue) || answerValue < 1 || answerValue > count) {
+        onError('MC Answer must be a 1-based index within the options list.');
+        return;
+      }
+      payload.MCAnswer = answerValue;
+    }
 
     setLoading(true);
     try {
@@ -325,13 +406,87 @@ const QuestionsManager = ({ config, onSuccess, onError }) => {
           </label>
           <label className="admin-label">
             Question text
-            <textarea
-              rows="4"
-              value={form.Question}
-              onChange={(e) => setForm((prev) => ({ ...prev, Question: e.target.value }))}
-              placeholder="Enter the question prompt"
-            />
+            <div className="admin-editor-toolbar">
+              <button
+                type="button"
+                onClick={() => editor?.chain().focus().toggleBold().run()}
+                disabled={!editor}
+                className="answer-toolbar-button"
+                aria-label="Bold"
+                title="Bold"
+              >
+                {icons.bold}
+              </button>
+              <button
+                type="button"
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
+                disabled={!editor}
+                className="answer-toolbar-button"
+                aria-label="Italic"
+                title="Italic"
+              >
+                {icons.italic}
+              </button>
+              <button
+                type="button"
+                onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                disabled={!editor}
+                className="answer-toolbar-button"
+                aria-label="Bullet list"
+                title="Bullet list"
+              >
+                {icons.bullet}
+              </button>
+              <button
+                type="button"
+                onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+                disabled={!editor}
+                className="answer-toolbar-button"
+                aria-label="Numbered list"
+                title="Numbered list"
+              >
+                {icons.ordered}
+              </button>
+              <button
+                type="button"
+                onClick={() => editor?.chain().focus().undo().run()}
+                disabled={!editor}
+                className="answer-toolbar-button"
+                aria-label="Undo"
+                title="Undo"
+              >
+                {icons.undo}
+              </button>
+              <button
+                type="button"
+                onClick={() => editor?.chain().focus().redo().run()}
+                disabled={!editor}
+                className="answer-toolbar-button"
+                aria-label="Redo"
+                title="Redo"
+              >
+                {icons.redo}
+              </button>
+            </div>
+            <div className="admin-rich-editor">
+              <EditorContent editor={editor} />
+            </div>
           </label>
+          {isMultiChoice && (
+            <label className="admin-label">
+              MC Answer (1-based index)
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={form.MCAnswer}
+                onChange={(e) => setForm((prev) => ({ ...prev, MCAnswer: e.target.value }))}
+                placeholder="e.g. 2"
+              />
+              {mcInfo && <div className="admin-help">{mcInfo}</div>}
+              {mcError && <div className="admin-help error">{mcError}</div>}
+            </label>
+          )}
           <div className="admin-form-actions">
             <label className="admin-switch">
               <input

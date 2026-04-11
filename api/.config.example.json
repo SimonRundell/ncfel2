@@ -24,6 +24,11 @@
             "role": "admin"
         },
         {
+            "username": "teacher",
+            "passwordHash": "$2y$10$FtCX6tL9Hgt.FFnskj4vFOUsLvRE55xvj26XhclcAhi2Q29pGzQEC",
+            "role": "teacher"
+        },
+        {
             "username": "reporting",
             "passwordHash": "$2y$10$CrXUDqG2qzpza2KzA1ZLRe6ovlkUhEnf/CMRcd5bDBBOA8oS6Zsxe",
             "role": "reporting"

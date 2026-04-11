@@ -13,6 +13,8 @@ if (!$attemptNumber) {
     $attemptNumber = get_current_attempt((int) $activityId, (int) $studentId, $mysqli);
 }
 
+log_info('getAnswers activityId=' . $activityId . ' studentId=' . $studentId . ' attemptNumber=' . $attemptNumber);
+
 $stmt = $mysqli->prepare('SELECT questionId, answer, `references`, status, outcome, comment, updatedAt, fileUploads FROM answers WHERE activityId = ? AND studentId = ? AND attemptNumber = ? ORDER BY questionId');
 if (!$stmt) {
     log_info('Prepare failed: ' . $mysqli->error);
@@ -26,6 +28,7 @@ if (!$stmt->execute()) {
 }
 
 $result = $stmt->get_result();
+$rowCount = 0;
 $answers = [];
 $references = [];
 $status = 'INPROGRESS';
@@ -36,6 +39,7 @@ $assessorComment = '';
 $currentAttempt = $attemptNumber;
 
 while ($row = $result->fetch_assoc()) {
+    $rowCount++;
     $questionId = (int) $row['questionId'];
     $decodedAnswer = json_decode($row['answer'], true);
     $decodedRefs = json_decode($row['references'], true);
@@ -48,6 +52,8 @@ while ($row = $result->fetch_assoc()) {
     $comments[$questionId] = $row['comment'] ?? '';
     $fileUploads[$questionId] = is_array($decodedUploads) ? $decodedUploads : [];
 }
+
+log_info('getAnswers returned rows=' . $rowCount);
 
 $activityStmt = $mysqli->prepare('SELECT assessorComment, currentAttempt FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
 if ($activityStmt) {

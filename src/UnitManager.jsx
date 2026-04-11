@@ -18,7 +18,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterCourseId, setFilterCourseId] = useState('');
-  const [form, setForm] = useState({ id: null, courseid: '', unitName: '', unitCode: '' });
+  const [form, setForm] = useState({ id: null, courseid: '', unitName: '', unitCode: '', assessmentType: 'Open' });
   const [unitToDelete, setUnitToDelete] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
 
@@ -73,7 +73,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
     loadUnits();
   }, [loadUnits]);
 
-  const resetForm = () => setForm({ id: null, courseid: '', unitName: '', unitCode: '' });
+  const resetForm = () => setForm({ id: null, courseid: '', unitName: '', unitCode: '', assessmentType: 'Open' });
 
   const closeEditor = () => {
     resetForm();
@@ -94,7 +94,12 @@ const UnitManager = ({ config, onSuccess, onError }) => {
 
     setLoading(true);
     try {
-      const payload = { courseid: Number(form.courseid), unitName: form.unitName.trim(), unitCode: form.unitCode.trim() };
+      const payload = {
+        courseid: Number(form.courseid),
+        unitName: form.unitName.trim(),
+        unitCode: form.unitCode.trim(),
+        assessmentType: form.assessmentType || 'Open',
+      };
       if (form.id) {
         await axios.post(
           `${config.api}/updateUnit.php`,
@@ -121,7 +126,13 @@ const UnitManager = ({ config, onSuccess, onError }) => {
   };
 
   const handleEdit = (unit) => {
-    setForm({ id: unit.id, courseid: unit.courseid, unitName: unit.unitName || '', unitCode: unit.unitCode || '' });
+    setForm({
+      id: unit.id,
+      courseid: unit.courseid,
+      unitName: unit.unitName || '',
+      unitCode: unit.unitCode || '',
+      assessmentType: unit.assessmentType || 'Open',
+    });
     setShowEditor(true);
   };
 
@@ -218,6 +229,17 @@ const UnitManager = ({ config, onSuccess, onError }) => {
               placeholder="e.g. NET-201"
             />
           </label>
+          <label className="admin-label">
+            Assessment type
+            <select
+              value={form.assessmentType}
+              onChange={(e) => setForm((prev) => ({ ...prev, assessmentType: e.target.value }))}
+              disabled={!!form.id}
+            >
+              <option value="Open">Open</option>
+              <option value="MultiChoice">MultiChoice</option>
+            </select>
+          </label>
           <div className="admin-form-actions">
             <button type="button" onClick={closeEditor} disabled={loading}>
               Close
@@ -235,7 +257,7 @@ const UnitManager = ({ config, onSuccess, onError }) => {
             <div>
               <div className="admin-row-title">{unit.unitName}</div>
               <div className="admin-row-subtitle">
-                ID: {unit.id} · Code: {unit.unitCode || '—'} · Course ID: {unit.courseid}
+                ID: {unit.id} · Code: {unit.unitCode || '—'} · Course ID: {unit.courseid} · {unit.assessmentType || 'Open'}
               </div>
             </div>
             <div className="admin-row-actions">

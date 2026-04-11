@@ -10,6 +10,7 @@ const MARKING_STATUSES = ['INMARKING', 'INREMARKING'];
 const OUTCOME_ACHIEVED = 'ACHIEVED';
 const OUTCOME_NOT_ACHIEVED = 'NOT ACHIEVED';
 const DEFAULT_ASSESSOR_COMMENT = '';
+const DEFAULT_ASSESSMENT_TYPE = 'Open';
 
 const AnswerPreview = ({ content }) => {
   const editor = useEditor({
@@ -29,6 +30,25 @@ const AnswerPreview = ({ content }) => {
   }, [content, editor]);
 
   return <EditorContent editor={editor} />;
+};
+
+const parseMultiChoiceQuestion = (html) => {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html || '', 'text/html');
+    const lists = Array.from(doc.querySelectorAll('ol'));
+    if (lists.length !== 1) {
+      return { promptHtml: doc.body.innerHTML.trim(), options: [] };
+    }
+    const list = lists[0];
+    const items = Array.from(list.children).filter((node) => node.tagName === 'LI');
+    list.remove();
+    const promptHtml = doc.body.innerHTML.trim();
+    const options = items.map((item, idx) => ({ index: idx + 1, html: item.innerHTML }));
+    return { promptHtml, options };
+  } catch {
+    return { promptHtml: html || '', options: [] };
+  }
 };
 
 /**
@@ -60,6 +80,8 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
   const [saving, setSaving] = useState(false);
   const [fileUploads, setFileUploads] = useState({});
   const [lightbox, setLightbox] = useState(null);
+  const [selectedAssessmentType, setSelectedAssessmentType] = useState(DEFAULT_ASSESSMENT_TYPE);
+  const [mcScore, setMcScore] = useState(null);
 
   const isTeacher = currentUser?.status === 2;
   const isAdmin = currentUser?.status === 3;
@@ -120,6 +142,13 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
   const unitMap = useMemo(() => {
     return units.reduce((acc, u) => {
       acc[u.id] = u.unitName || `Unit ${u.id}`;
+      return acc;
+    }, {});
+  }, [units]);
+
+  const unitAssessmentMap = useMemo(() => {
+    return units.reduce((acc, u) => {
+      acc[u.id] = u.assessmentType || DEFAULT_ASSESSMENT_TYPE;
       return acc;
     }, {});
   }, [units]);
@@ -188,60 +217,112 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
     setOutcomes({});
     setComments({});
     setFileUploads({});
+    setSelectedAssessmentType(DEFAULT_ASSESSMENT_TYPE);
+    setMcScore(null);
   }, [selectedUnitId]);
+
+  const computeMcOutcomes = useCallback((qs, answerMap) => {
+    const toIndex = (value) => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        const direct = Number(trimmed);
+        if (!Number.isNaN(direct)) return direct;
+        try {
+          const parsed = JSON.parse(trimmed);
+          return toIndex(parsed);
+        } catch {
+          return null;
+        }
+      }
+      if (typeof value === 'object') {
+        if (value.index !== undefined) return toIndex(value.index);
+        if (value.value !== undefined) return toIndex(value.value);
+      }
+      return null;
+    };
+
+    const computed = {};
+    qs.forEach((q) => {
+      const correct = toIndex(q.MCAnswer);
+      const raw = answerMap[q.id] ?? answerMap[String(q.id)];
+      const selected = toIndex(raw);
+      const achieved = correct !== null && selected !== null && selected === correct;
+      computed[q.id] = achieved ? OUTCOME_ACHIEVED : OUTCOME_NOT_ACHIEVED;
+    });
+    return computed;
+  }, []);
+
+  const computeMcScore = useCallback((qs, computedOutcomes) => {
+    const total = qs.length;
+    if (total === 0) return null;
+    const achieved = qs.filter((q) => computedOutcomes[q.id] === OUTCOME_ACHIEVED).length;
+    return { achieved, total };
+  }, []);
 
   const loadSubmissionDetail = async (activity) => {
     if (!activity || !config?.api) return;
     setLoading(true);
     setSelectedSubmission(activity);
     try {
-      const [questionsRes, answersRes] = await Promise.all([
-        axios.post(
-          `${config.api}/getQuestions.php`,
-          { unitId: activity.unitId, courseId: activity.courseId },
-          { headers: { 'Content-Type': 'application/json' } }
-        ),
-        axios.post(
-          `${config.api}/getAnswers.php`,
-            { activityId: activity.id, studentId: activity.studentId, attemptNumber: activity.currentAttempt || 1 },
-          { headers: { 'Content-Type': 'application/json' } }
-        ),
-      ]);
+      const assessmentType = unitAssessmentMap[activity.unitId] || DEFAULT_ASSESSMENT_TYPE;
+      setSelectedAssessmentType(assessmentType);
+      const attemptNumber = activity.currentAttempt ?? activity.attemptNumber ?? 1;
+      const bundleRes = await axios.post(
+        `${config.api}/getMarkingBundle.php`,
+        { activityId: activity.id, studentId: activity.studentId, attemptNumber },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
 
-      const qs = normalizeListResponse(questionsRes.data);
-      const normalizedQs = Array.isArray(qs)
-        ? qs.map((q) => ({
+      const bundle = bundleRes.data?.message?.data || bundleRes.data?.data || {};
+      const normalizedQs = Array.isArray(bundle.questions)
+        ? bundle.questions.map((q) => ({
             ...q,
             uploadPermitted: Number(q?.uploadPermitted ?? q?.uploadpermitted ?? 0) === 1,
           }))
         : [];
       setQuestions(normalizedQs);
 
-      const answersPayload = answersRes.data?.data || {};
-      setAnswers(answersPayload.answers || {});
-      const rawOutcomes = answersPayload.outcomes || {};
-      const normalizedOutcomes = {};
-      normalizedQs.forEach((q) => {
-        const raw = rawOutcomes[q.id] ?? rawOutcomes[String(q.id)];
-        const normalized = typeof raw === 'string' ? raw.trim().toUpperCase() : raw;
-        if (normalized === OUTCOME_ACHIEVED) {
-          normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
-          return;
-        }
-        if (normalized === OUTCOME_NOT_ACHIEVED) {
+      const hasMcAnswer = normalizedQs.some((q) => q.MCAnswer !== null && q.MCAnswer !== undefined && q.MCAnswer !== '');
+      const resolvedAssessmentType = hasMcAnswer ? 'MultiChoice' : assessmentType;
+      if (resolvedAssessmentType !== selectedAssessmentType) {
+        setSelectedAssessmentType(resolvedAssessmentType);
+      }
+
+      const answersMap = bundle.answers || {};
+      setAnswers(answersMap);
+      if (resolvedAssessmentType === 'MultiChoice') {
+        const computedOutcomes = computeMcOutcomes(normalizedQs, answersMap);
+        setOutcomes(computedOutcomes);
+        setComments({});
+        setMcScore(computeMcScore(normalizedQs, computedOutcomes));
+      } else {
+        const rawOutcomes = bundle.outcomes || {};
+        const normalizedOutcomes = {};
+        normalizedQs.forEach((q) => {
+          const raw = rawOutcomes[q.id] ?? rawOutcomes[String(q.id)];
+          const normalized = typeof raw === 'string' ? raw.trim().toUpperCase() : raw;
+          if (normalized === OUTCOME_ACHIEVED) {
+            normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
+            return;
+          }
+          if (normalized === OUTCOME_NOT_ACHIEVED) {
+            normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
+            return;
+          }
+          if (normalized === 1 || normalized === '1' || normalized === true) {
+            normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
+            return;
+          }
           normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
-          return;
-        }
-        if (normalized === 1 || normalized === '1' || normalized === true) {
-          normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
-          return;
-        }
-        normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
-      });
-      setOutcomes(normalizedOutcomes);
-      setComments(answersPayload.comments || {});
-      setAssessorComment(answersPayload.assessorComment || DEFAULT_ASSESSOR_COMMENT);
-      const uploadsFromServer = answersPayload.fileUploads || {};
+        });
+        setOutcomes(normalizedOutcomes);
+        setComments(bundle.comments || {});
+        setMcScore(null);
+      }
+      setAssessorComment(bundle.assessorComment || DEFAULT_ASSESSOR_COMMENT);
+      const uploadsFromServer = bundle.fileUploads || {};
       setFileUploads(() => {
         const mapped = {};
         Object.keys(uploadsFromServer).forEach((qid) => {
@@ -291,24 +372,29 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
 
   const saveMarking = async () => {
     if (!selectedSubmission) return;
-    const normalizedOutcomes = {};
-    questions.forEach((q) => {
-      const raw = outcomes[q.id] ?? outcomes[String(q.id)];
-      const normalized = typeof raw === 'string' ? raw.trim().toUpperCase() : raw;
-      if (normalized === OUTCOME_ACHIEVED) {
-        normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
-        return;
-      }
-      if (normalized === OUTCOME_NOT_ACHIEVED) {
-        normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
-        return;
-      }
-      if (normalized === 1 || normalized === '1' || normalized === true) {
-        normalizedOutcomes[q.id] = OUTCOME_ACHIEVED;
-        return;
-      }
-      normalizedOutcomes[q.id] = OUTCOME_NOT_ACHIEVED;
-    });
+    const normalizedOutcomes = selectedAssessmentType === 'MultiChoice'
+      ? computeMcOutcomes(questions, answers)
+      : (() => {
+          const mapped = {};
+          questions.forEach((q) => {
+            const raw = outcomes[q.id] ?? outcomes[String(q.id)];
+            const normalized = typeof raw === 'string' ? raw.trim().toUpperCase() : raw;
+            if (normalized === OUTCOME_ACHIEVED) {
+              mapped[q.id] = OUTCOME_ACHIEVED;
+              return;
+            }
+            if (normalized === OUTCOME_NOT_ACHIEVED) {
+              mapped[q.id] = OUTCOME_NOT_ACHIEVED;
+              return;
+            }
+            if (normalized === 1 || normalized === '1' || normalized === true) {
+              mapped[q.id] = OUTCOME_ACHIEVED;
+              return;
+            }
+            mapped[q.id] = OUTCOME_NOT_ACHIEVED;
+          });
+          return mapped;
+        })();
 
     const hasNotAchieved = Object.values(normalizedOutcomes).some((v) => v === OUTCOME_NOT_ACHIEVED);
     const attemptNumber = selectedSubmission?.currentAttempt || 1;
@@ -319,7 +405,7 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
     questions.forEach((q) => {
       marksPayload[q.id] = {
         outcome: normalizedOutcomes[q.id] || OUTCOME_NOT_ACHIEVED,
-        comment: comments[q.id] || '',
+        comment: selectedAssessmentType === 'MultiChoice' ? '' : (comments[q.id] || ''),
       };
     });
 
@@ -448,6 +534,9 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
               <div className="marking-workspace-title">{studentMap[selectedSubmission.studentId] || 'Student'}</div>
               <div className="marking-workspace-meta">{unitMap[selectedSubmission.unitCode] || `Unit ${selectedSubmission.unitCode}`} · {courseMap[selectedSubmission.courseId] || `Course ${selectedSubmission.courseId}`}</div>
               <div className="marking-workspace-meta">Current status: {selectedSubmission.status} · Attempt {selectedSubmission.currentAttempt || 1}</div>
+              {selectedAssessmentType === 'MultiChoice' && mcScore && (
+                <div className="marking-workspace-meta">Score: {mcScore.achieved}/{mcScore.total}</div>
+              )}
             </div>
             <div className="marking-workspace-actions">
               <button
@@ -472,10 +561,44 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
             <div className="marking-question" key={q.id}>
               <div className="marking-question-header">
                 <div className="marking-question-ref">{q.QuestionRef || `Q${q.id}`}</div>
-                <div className="marking-question-text" dangerouslySetInnerHTML={{ __html: q.Question }} />
+                {selectedAssessmentType === 'MultiChoice' ? (() => {
+                  const parsed = parseMultiChoiceQuestion(q.Question || '');
+                  return parsed.promptHtml ? (
+                    <div className="marking-question-text" dangerouslySetInnerHTML={{ __html: parsed.promptHtml }} />
+                  ) : null;
+                })() : (
+                  <div className="marking-question-text" dangerouslySetInnerHTML={{ __html: q.Question }} />
+                )}
               </div>
               <div className="marking-answer-box">
-                <AnswerPreview content={answers[q.id]} />
+                {selectedAssessmentType === 'MultiChoice' ? (() => {
+                  const parsed = parseMultiChoiceQuestion(q.Question || '');
+                  const selected = answers[q.id] ?? answers[String(q.id)];
+                  return (
+                    <div className="marking-mc">
+                      <div className="marking-mc-options">
+                        {parsed.options.map((opt) => {
+                          const isSelected = Number(selected) === opt.index;
+                          const isCorrect = Number(q.MCAnswer) === opt.index;
+                          const label = `${opt.index}. `;
+                          return (
+                            <div
+                              key={`${q.id}-opt-${opt.index}`}
+                              className={`marking-mc-option${isSelected ? ' selected' : ''}${isCorrect ? ' correct' : ''}`}
+                            >
+                              <strong className="marking-mc-option-label">{label}</strong>
+                              <span className="marking-mc-option-text" dangerouslySetInnerHTML={{ __html: opt.html }} />
+                              {isSelected && <span className="marking-mc-tag">Selected</span>}
+                              {isCorrect && <span className="marking-mc-correct">Correct</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <AnswerPreview content={answers[q.id]} />
+                )}
               </div>
               {q.uploadPermitted ? (
                 <div className="upload-section readonly">
@@ -522,29 +645,37 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
                   </div>
                 </div>
               ) : null}
-              <div className="marking-controls">
-                <label className="marking-switch">
-                  <input
-                    type="checkbox"
-                    checked={(outcomes[q.id] || OUTCOME_NOT_ACHIEVED) === OUTCOME_ACHIEVED}
-                    onChange={(e) => handleOutcomeToggle(q.id, e.target.checked)}
-                  />
-                  <span className="marking-switch-track" aria-hidden="true">
-                    <span className="marking-switch-thumb" />
-                  </span>
-                  <span className="marking-switch-label">
+              {selectedAssessmentType === 'MultiChoice' ? (
+                <div className="marking-controls">
+                  <div className="marking-mc-result">
                     {(outcomes[q.id] || OUTCOME_NOT_ACHIEVED) === OUTCOME_ACHIEVED ? 'Achieved' : 'Not Achieved'}
-                  </span>
-                </label>
-                <textarea
-                  className="marking-comment"
-                  placeholder="Assessor comment (optional)"
-                  value={comments[q.id] || ''}
-                  onChange={(e) => handleCommentChange(q.id, e.target.value)}
-                  rows={2}
-                  maxLength={300}
-                />
-              </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="marking-controls">
+                  <label className="marking-switch">
+                    <input
+                      type="checkbox"
+                      checked={(outcomes[q.id] || OUTCOME_NOT_ACHIEVED) === OUTCOME_ACHIEVED}
+                      onChange={(e) => handleOutcomeToggle(q.id, e.target.checked)}
+                    />
+                    <span className="marking-switch-track" aria-hidden="true">
+                      <span className="marking-switch-thumb" />
+                    </span>
+                    <span className="marking-switch-label">
+                      {(outcomes[q.id] || OUTCOME_NOT_ACHIEVED) === OUTCOME_ACHIEVED ? 'Achieved' : 'Not Achieved'}
+                    </span>
+                  </label>
+                  <textarea
+                    className="marking-comment"
+                    placeholder="Assessor comment (optional)"
+                    value={comments[q.id] || ''}
+                    onChange={(e) => handleCommentChange(q.id, e.target.value)}
+                    rows={2}
+                    maxLength={300}
+                  />
+                </div>
+              )}
             </div>
           ))}
 

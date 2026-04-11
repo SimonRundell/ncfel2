@@ -3,6 +3,8 @@ include 'setup.php';
 
 $unitId = $receivedData['unitId'] ?? $receivedData['unitid'] ?? ($_GET['unitId'] ?? $_GET['unitid'] ?? null);
 $courseId = $receivedData['courseId'] ?? $receivedData['courseid'] ?? ($_GET['courseId'] ?? $_GET['courseid'] ?? null);
+$includeMCAnswer = $receivedData['includeMCAnswer'] ?? ($_GET['includeMCAnswer'] ?? false);
+$includeMCAnswer = $includeMCAnswer === true || $includeMCAnswer === '1' || $includeMCAnswer === 1 || $includeMCAnswer === 'true';
 
 if ($unitId === null) {
     send_response('Missing unitId', 400);
@@ -11,7 +13,10 @@ if ($unitId === null) {
 $unitId = (int)$unitId;
 $courseId = $courseId !== null ? (int)$courseId : null;
 
-$query = 'SELECT * FROM questions WHERE unitid = ?';
+$canIncludeMCAnswer = $includeMCAnswer && !empty($GLOBALS['authenticatedRole']);
+$query = $canIncludeMCAnswer
+    ? 'SELECT id, courseid, unitid, QuestionRef, Question, uploadPermitted, MCAnswer FROM questions WHERE unitid = ?'
+    : 'SELECT id, courseid, unitid, QuestionRef, Question, uploadPermitted FROM questions WHERE unitid = ?';
 $params = [$unitId];
 $types = 'i';
 

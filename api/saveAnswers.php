@@ -1,6 +1,5 @@
 <?php
 include 'setup.php';
-require_once __DIR__ . '/emailHelper.php';
 
 $activityId = $receivedData['activityId'] ?? null;
 $studentId = $receivedData['studentId'] ?? null;
@@ -10,6 +9,9 @@ $fileUploads = $receivedData['fileUploads'] ?? null; // expected map: questionId
 $incomingStatus = $receivedData['status'] ?? 'DRAFT';
 // answers.status enum currently does not include DRAFT; map DRAFT to INPROGRESS so inserts succeed.
 $status = $incomingStatus === 'DRAFT' ? 'INPROGRESS' : $incomingStatus;
+if ($incomingStatus === 'SUBMITTED' || $incomingStatus === 'RESUBMITTED') {
+    $status = $incomingStatus;
+}
 $attemptNumber = isset($receivedData['attemptNumber']) ? (int) $receivedData['attemptNumber'] : null;
 
 if ($activityId === null || $studentId === null || !is_array($answers)) {
@@ -66,6 +68,17 @@ foreach ($answers as $questionId => $answerContent) {
 $total = count($answers);
 log_info('saveAnswers persisted ' . $saved . ' of ' . $total . ' rows for activity ' . $activityId . ' student ' . $studentId . ' attempt ' . $attemptNumber . ' status ' . $status);
 
+if ($status === 'SUBMITTED' || $status === 'RESUBMITTED') {
+    $statusStmt = $mysqli->prepare('UPDATE answers SET status = ?, updatedAt = NOW() WHERE activityId = ? AND studentId = ? AND attemptNumber = ?');
+    if ($statusStmt) {
+        $statusStmt->bind_param('siii', $status, $activityId, $studentId, $attemptNumber);
+        if (!$statusStmt->execute()) {
+            log_info('Update status failed for submitted answers: ' . $statusStmt->error);
+            send_response('Update status failed: ' . $statusStmt->error, 500);
+        }
+    }
+}
+
 $countResult = $mysqli->query('SELECT COUNT(*) AS c FROM answers');
 if ($countResult) {
     $row = $countResult->fetch_assoc();
@@ -87,6 +100,7 @@ if ($saved === 0) {
 
 // Send email to teachers if status is SUBMITTED
 if ($status === 'SUBMITTED') {
+    require_once __DIR__ . '/emailHelper.php';
     try {
         // Get student details
         $studentQuery = 'SELECT email, userName, classCode FROM user WHERE id = ?';

@@ -1475,6 +1475,16 @@ MARKING DASHBOARD
   gap: 0.5rem;
 }
 
+.admin-rich-editor {
+  border: 1px solid #2f2f2f;
+  border-radius: 10px;
+  min-height: 120px;
+  padding: 0.5rem;
+  background: #151515;
+  color: #f5f5f5;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 .marking-question-header {
   display: flex;
   gap: 0.5rem;
@@ -1632,6 +1642,98 @@ MARKING DASHBOARD
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.mc-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-left: 0.35rem;
+}
+
+.mc-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  line-height: 1.2;
+}
+
+.mc-option input[type="radio"] {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.mc-option-label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.mc-saving {
+  color: #9a9a9a;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.marking-mc-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.marking-mc-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 8px;
+  line-height: 1.2;
+}
+
+.marking-mc-option.selected {
+  background: rgba(100, 140, 255, 0.08);
+  border: 1px solid rgba(100, 140, 255, 0.25);
+}
+
+.marking-mc-option.correct {
+  background: rgba(88, 180, 132, 0.1);
+  border: 1px solid rgba(88, 180, 132, 0.3);
+}
+
+.marking-mc-option-label {
+  flex: 0 0 auto;
+  color: #d6e6ff;
+}
+
+.marking-mc-option-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marking-mc-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  background: #243447;
+  border: 1px solid #3a516b;
+  font-size: 0.85rem;
+  margin-left: 5px;
+}
+
+.marking-mc-correct {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  background: #4a947e;
+  border: 1px solid #3a516b;
+  font-size: 0.85rem;
+  margin-left: 5px;
 }
 
 .references-group {

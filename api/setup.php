@@ -415,10 +415,10 @@ function get_required_roles_for_script($script) {
 
     $isReadOnly = preg_match('/^get.+\.php$/', $script) === 1;
     if ($isReadOnly || in_array($script, $reportingAllowed, true)) {
-        return ['admin', 'reporting'];
+        return ['admin', 'reporting', 'teacher'];
     }
 
-    return ['admin'];
+    return ['admin', 'teacher'];
 }
 
 function verify_jwt($token, $config, &$claims, &$errorCode, &$errorMessage) {

@@ -75,6 +75,19 @@ foreach ($marks as $questionId => $payload) {
     }
 }
 
+if ($statusToStore === 'RETURNED') {
+    $statusStmt = $mysqli->prepare('UPDATE answers SET status = ?, updatedAt = NOW() WHERE activityId = ? AND studentId = ? AND attemptNumber = ?');
+    if (!$statusStmt) {
+        log_info('Prepare failed for bulk status update: ' . $mysqli->error);
+        send_response('Prepare failed: ' . $mysqli->error, 500);
+    }
+    $statusStmt->bind_param('siii', $statusToStore, $activityId, $studentId, $currentAttempt);
+    if (!$statusStmt->execute()) {
+        log_info('Bulk status update failed: ' . $statusStmt->error);
+        send_response('Bulk status update failed: ' . $statusStmt->error, 500);
+    }
+}
+
 $now = date('Y-m-d H:i:s');
 $dateComplete = $finalStatus === 'PASSED' || $finalStatus === 'NOTPASSED' ? $now : null;
 
