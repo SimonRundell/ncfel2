@@ -19,13 +19,25 @@ const AnswerPreview = ({ content }) => {
     editable: false,
   });
 
+  const normalizeContent = (value) => {
+    if (!value) return '';
+    if (typeof value === 'object') return value;
+    if (typeof value !== 'string') return '';
+    try {
+      const parsed = JSON.parse(value);
+      return parsed;
+    } catch {
+      return value;
+    }
+  };
+
   useEffect(() => {
-    if (editor) {
-      if (content) {
-        editor.commands.setContent(content);
-      } else {
-        editor.commands.clearContent(true);
-      }
+    if (!editor) return;
+    const nextContent = normalizeContent(content);
+    if (nextContent) {
+      editor.commands.setContent(nextContent);
+    } else {
+      editor.commands.clearContent(true);
     }
   }, [content, editor]);
 

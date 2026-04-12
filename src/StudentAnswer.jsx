@@ -1108,7 +1108,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
                         selectedIndex={answers[q.id]}
                         disabled={!isQuestionEditable(q.id)}
                         isSaving={mcSaving}
-                        showResultTag={activityStatus === 'RETURNED'}
+                        showResultTag={activityStatus === 'RETURNED' || activityStatus === 'REDOING'}
                         onSelect={(index) => {
                           setAnswers((prev) => {
                             const next = { ...prev, [q.id]: index };
