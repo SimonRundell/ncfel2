@@ -385,6 +385,7 @@ For each activity:
 - TipTap rich text editor for each question
 - Multiple reference URL inputs per question
 - Optional attachments when uploadPermitted is enabled per question
+- MultiChoice mode renders numbered options and autosaves on selection
 - Auto-save draft functionality
 - Submit for marking
 - Load existing answers
@@ -409,6 +410,7 @@ POST /api/saveAnswers.php
 {
   activityId, studentId,
   status: "DRAFT",  // Converted to INPROGRESS
+  attemptNumber,
   answers: { qId: content },
   references: { qId: [urls] }
 }
@@ -420,8 +422,18 @@ POST /api/saveAnswers.php
 {
   activityId, studentId,
   status: "SUBMITTED",  // Triggers teacher email
+  attemptNumber,
   answers: { qId: content },
   references: { qId: [urls] }
+}
+```
+
+**MultiChoice Answer Format:**
+```json
+{
+  "answers": {
+    "1": 2
+  }
 }
 ```
 
@@ -496,6 +508,8 @@ POST /api/saveAnswers.php
 - View submissions in progress (INMARKING, INREMARKING)
 - Sticky workspace header keeps actions visible while scrolling
 - Rich text answer preview with TipTap
+- MultiChoice answers render as numbered options with Selected/Correct tags
+- Auto-score MultiChoice outcomes with score summary
 - Per-question outcome selection (ACHIEVED/NOT ACHIEVED)
 - Per-question comment field
 - Overall assessor comment
@@ -522,8 +536,7 @@ POST /api/saveAnswers.php
 - GET /api/getUnits.php
 - POST /api/getUsers.php (filtered by class for teachers)
 - GET /api/getCurrentActivities.php
-- POST /api/getQuestions.php
-- POST /api/getAnswers.php
+- POST /api/getMarkingBundle.php
 - POST /api/markAnswers.php
 
 ---
@@ -638,8 +651,7 @@ const buildPrintHtml = () => {
 
 **API Calls:**
 - POST /api/getAssessments.php (with studentId)
-- POST /api/getQuestions.php
-- POST /api/getAnswers.php
+- POST /api/getMarkingBundle.php
 - POST /api/getUsers.php (to fetch assessor name)
 
 ---
@@ -913,12 +925,14 @@ Modal.confirm({
 **Features:**
 - Filter by course
 - Create, update, and delete units
+- Set assessment type (Open or MultiChoice)
 - Editor panel remains hidden until Add/Edit
 
 **Form Fields:**
 - Course (required)
 - Unit name (required)
 - Unit code (required)
+- Assessment type (Open/MultiChoice)
 
 **API Calls:**
 - GET /api/getUnits.php
@@ -963,6 +977,7 @@ Modal.confirm({
 - Filter by course then unit
 - Create, update, delete questions
 - uploadPermitted flag controls whether students can attach files
+- MultiChoice units validate a single ordered list and store MCAnswer index
 - Switch control places "Allow uploads" next to editor actions
 
 **Question Fields:**
@@ -971,6 +986,7 @@ Modal.confirm({
 - QuestionRef (optional)
 - Question text (required)
 - uploadPermitted (0/1)
+- MCAnswer (1-based option index for MultiChoice)
 
 **API Calls:**
 - GET /api/getCourses.php

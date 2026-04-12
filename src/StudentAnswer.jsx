@@ -29,6 +29,13 @@ const ToolbarButton = ({ icon, label, isActive, onClick, disabled }) => (
   </button>
 );
 
+/**
+ * Parse a multi-choice prompt that uses a single ordered list for options.
+ * The prompt is the HTML before the ordered list; each <li> becomes an option.
+ *
+ * @param {string} html
+ * @returns {{ promptHtml: string, options: Array<{ index: number, html: string }>, error: string }}
+ */
 const parseMultiChoiceQuestion = (html) => {
   try {
     const parser = new DOMParser();
@@ -334,20 +341,46 @@ const QuestionAnswerItem = ({
   );
 };
 
+/**
+ * Render a multi-choice question with radio inputs and autosave status.
+ *
+ * @param {{
+ *  question: { id: number, QuestionRef?: string, Question?: string },
+ *  selectedIndex: number | null,
+ *  disabled: boolean,
+ *  onSelect: (index: number) => void,
+ *  isSaving: boolean
+ * }} props
+ * @returns {JSX.Element}
+ */
 const MultiChoiceItem = ({
   question,
   selectedIndex,
   disabled,
   onSelect,
   isSaving,
+  showResultTag,
 }) => {
   const { promptHtml, options, error } = parseMultiChoiceQuestion(question.Question || '');
+  const normalizedSelected = selectedIndex === null || selectedIndex === undefined
+    ? null
+    : Number(selectedIndex);
+  const normalizedCorrect = question.MCAnswer === null || question.MCAnswer === undefined || question.MCAnswer === ''
+    ? null
+    : Number(question.MCAnswer);
+  const isCorrect = normalizedSelected !== null && normalizedCorrect !== null && normalizedSelected === normalizedCorrect;
+  const isIncorrect = normalizedSelected !== null && normalizedCorrect !== null && normalizedSelected !== normalizedCorrect;
 
   return (
     <div className="qa-block">
       <div className="qa-question">
         <span className="question-ref">{question.QuestionRef || `Q${question.id}`}</span>
-        {promptHtml && <span className="question-text" dangerouslySetInnerHTML={{ __html: promptHtml }} />}
+        {promptHtml && <span className="mc-question-text" dangerouslySetInnerHTML={{ __html: promptHtml }} />}
+        {showResultTag && (isCorrect || isIncorrect) && (
+          <span className={`mc-result-tag${isCorrect ? ' correct' : ' incorrect'}`}>
+            {isCorrect ? 'Correct' : 'Incorrect'}
+          </span>
+        )}
       </div>
       <div className="qa-answer">
         {error && <div className="answer-meta error">{error}</div>}
@@ -367,11 +400,7 @@ const MultiChoiceItem = ({
             ))}
           </div>
         )}
-        {!error && (
-          <div className="mc-saving" aria-live="polite">
-            {isSaving ? 'Saving…' : 'Saved'}
-          </div>
-        )}
+        {!error && null}
       </div>
     </div>
   );
@@ -411,7 +440,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
   const [assessorComment, setAssessorComment] = useState('');
   const [fileUploads, setFileUploads] = useState({}); // questionId -> [uploads]
   const [uploadingMap, setUploadingMap] = useState({}); // questionId -> bool
-  const [attemptNumber, setAttemptNumber] = useState(activity?.currentAttempt || 1);
+  const [attemptNumber, setAttemptNumber] = useState(activity?.attemptNumber || activity?.currentAttempt || 1);
   const storageKey = useMemo(
     () => `answer-${activity?.id || 'unknown'}-attempt-${attemptNumber}`,
     [activity?.id, attemptNumber]
@@ -439,8 +468,8 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
   }, []);
 
   useEffect(() => {
-    setAttemptNumber(activity?.currentAttempt || 1);
-  }, [activity?.currentAttempt]);
+    setAttemptNumber(activity?.attemptNumber || activity?.currentAttempt || 1);
+  }, [activity?.attemptNumber, activity?.currentAttempt]);
 
   const questionStorageKey = useCallback((qid) => `${storageKey}-q-${qid}`, [storageKey]);
 
@@ -541,6 +570,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
           {
             unitId: activity.unitId,
             courseId: activity.courseId,
+            includeMCAnswer: true,
           },
           { headers: { 'Content-Type': 'application/json' } }
         );
@@ -828,6 +858,12 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
     );
   };
 
+  /**
+   * Persist multi-choice selections immediately as INPROGRESS answers.
+   *
+   * @param {Record<string, number|null>} nextAnswers
+   * @returns {Promise<void>}
+   */
   const saveMcDraft = async (nextAnswers) => {
     if (!config?.api || !activity?.id || !activity?.studentId) return;
     setMcSaving(true);
@@ -850,10 +886,11 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
       payload,
       { headers: { 'Content-Type': 'application/json' } }
     );
-    if (activityStatus !== 'INPROGRESS') {
-      await updateActivityStatus('INPROGRESS');
-      setActivityStatus('INPROGRESS');
-      setStatusText(displayStatus('INPROGRESS'));
+    const nextStatus = activityStatus === 'RETURNED' ? 'REDOING' : 'INPROGRESS';
+    if (activityStatus !== nextStatus) {
+      await updateActivityStatus(nextStatus, { attemptNumber });
+      setActivityStatus(nextStatus);
+      setStatusText(displayStatus(nextStatus));
     }
     setMcSaving(false);
   };
@@ -966,7 +1003,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
         headers: { 'Content-Type': 'application/json' },
       });
       setAnswers(answersPayload);
-      await updateActivityStatus(draftStatus);
+      await updateActivityStatus(draftStatus, { attemptNumber });
       if (onDraftSaved) onDraftSaved();
       setActivityStatus(draftStatus);
       setStatusText(`${displayStatus(draftStatus)} · Draft saved`);
@@ -1033,6 +1070,9 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
             <div className="modal-title">Assessment</div>
             <div className="modal-subtitle">
               Status: {statusText} · Attempt {attemptNumber} {blockMessage ? ` · ${blockMessage}` : ''}
+              <span className="mc-saving" aria-live="polite">
+                {mcSaving ? 'Saving…' : ''}
+              </span>
             </div>
           </div>
           <button type="button" onClick={onClose} disabled={loading}>
@@ -1068,6 +1108,7 @@ const StudentAnswer = ({ config, activity, onClose, onSubmitted, onDraftSaved, o
                         selectedIndex={answers[q.id]}
                         disabled={!isQuestionEditable(q.id)}
                         isSaving={mcSaving}
+                        showResultTag={activityStatus === 'RETURNED'}
                         onSelect={(index) => {
                           setAnswers((prev) => {
                             const next = { ...prev, [q.id]: index };

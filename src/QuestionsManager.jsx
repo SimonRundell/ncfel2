@@ -27,6 +27,8 @@ const emptyForm = {
 /**
  * Admin CRUD interface for questions by course/unit.
  * Supports the uploadPermitted flag which enables student attachments per question.
+ * For MultiChoice units, questions must include a single ordered list (<ol>) of options
+ * and store the correct option index in MCAnswer.
  *
  * Endpoints:
  * - GET /api/getCourses.php
@@ -209,6 +211,12 @@ const QuestionsManager = ({ config, onSuccess, onError }) => {
   const selectedUnit = units.find((unit) => String(unit.id) === String(selectedUnitId));
   const isMultiChoice = (selectedUnit?.assessmentType || 'Open') === 'MultiChoice';
 
+  /**
+   * Validate MultiChoice content: exactly one ordered list with at least one item.
+   *
+   * @param {string} html
+   * @returns {{ count: number, error: string }}
+   */
   const analyzeOrderedList = (html) => {
     try {
       const parser = new DOMParser();

@@ -32,6 +32,12 @@ const AnswerPreview = ({ content }) => {
   return <EditorContent editor={editor} />;
 };
 
+/**
+ * Parse a multi-choice question that stores options in a single ordered list.
+ *
+ * @param {string} html
+ * @returns {{ promptHtml: string, options: Array<{ index: number, html: string }> }}
+ */
 const parseMultiChoiceQuestion = (html) => {
   try {
     const parser = new DOMParser();
@@ -221,6 +227,13 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
     setMcScore(null);
   }, [selectedUnitId]);
 
+  /**
+   * Compute ACHIEVED/NOT ACHIEVED outcomes from MC answers.
+   *
+   * @param {Array<{ id: number, MCAnswer: number|string|null }>} qs
+   * @param {Record<string, unknown>} answerMap
+   * @returns {Record<string, string>}
+   */
   const computeMcOutcomes = useCallback((qs, answerMap) => {
     const toIndex = (value) => {
       if (value === null || value === undefined) return null;
@@ -254,6 +267,13 @@ const MarkingDashboard = ({ config, currentUser, onError, onSuccess }) => {
     return computed;
   }, []);
 
+  /**
+   * Compute MC score summary from outcomes.
+   *
+   * @param {Array<{ id: number }>} qs
+   * @param {Record<string, string>} computedOutcomes
+   * @returns {{ achieved: number, total: number } | null}
+   */
   const computeMcScore = useCallback((qs, computedOutcomes) => {
     const total = qs.length;
     if (total === 0) return null;

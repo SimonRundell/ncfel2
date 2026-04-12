@@ -4,6 +4,7 @@ import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers
 
 /**
  * Admin CRUD interface for units with optional course filtering.
+ * Units include an assessmentType (Open or MultiChoice) that controls how questions render.
  *
  * @component
  * @param {{

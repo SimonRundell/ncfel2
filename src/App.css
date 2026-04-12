@@ -1498,6 +1498,7 @@ MARKING DASHBOARD
 
 .marking-question-text {
   color: #f5f5f5;
+  font-size: 1rem;
 }
 
 .marking-answer-box {
@@ -1593,10 +1594,7 @@ MARKING DASHBOARD
   color: #e2e2e2;
 }
 
-.question-text {
-  color: #d0d0d0;
-  vertical-align:top
-}
+
 
 .qa-list {
   display: flex;
@@ -1620,6 +1618,7 @@ MARKING DASHBOARD
   flex-direction: row;
   align-items: center;
   gap: 0.2rem;
+  flex-wrap: wrap;
 }
 
 .question-ref {
@@ -1636,6 +1635,7 @@ MARKING DASHBOARD
   align-items: center;
   padding: 0 0.55rem;
   border-radius: 8px;
+    font-size: 1rem;
 }
 
 .qa-answer {
@@ -1654,10 +1654,10 @@ MARKING DASHBOARD
 .mc-option {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 0.6rem;
   line-height: 1.2;
 }
-
 .mc-option input[type="radio"] {
   margin: 0;
   flex: 0 0 auto;
@@ -1666,12 +1666,59 @@ MARKING DASHBOARD
 .mc-option-label {
   display: inline-flex;
   align-items: center;
+  text-align: left;
 }
 
 .mc-saving {
   color: #9a9a9a;
   font-size: 0.85rem;
   margin-top: 0.25rem;
+  background-color: rgb(40, 95, 40);
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #e6e6e6;
+  min-width: 84px;
+  height: 1.4rem;
+  line-height: 1.4rem;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+  justify-content: center;
+}
+
+.mc-saving:empty {
+  visibility: hidden;
+}
+
+.mc-question-text {
+  color: #d0d0d0;
+  vertical-align:top;
+  font-size: 1.5rem;
+}
+
+.mc-result-tag {
+  margin-left: auto;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: #1f1f1f;
+  border: 1px solid #2f2f2f;
+  color: #f0f0f0;
+}
+
+.mc-result-tag.correct {
+  background: #1c5f3a;
+  border-color: #247548;
+  color: #eafff0;
+}
+
+.mc-result-tag.incorrect {
+  background: #5f1c1c;
+  border-color: #7a2a2a;
+  color: #ffecec;
 }
 
 .marking-mc-options {

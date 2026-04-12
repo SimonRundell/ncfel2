@@ -265,7 +265,7 @@ function log_info($log) {
 } // log_info
 
 function get_current_attempt($activityId, $studentId, $mysqli) {
-    $stmt = $mysqli->prepare('SELECT currentAttempt FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
+    $stmt = $mysqli->prepare('SELECT attemptNumber FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
     if (!$stmt) {
         return 1;
     }
@@ -281,7 +281,7 @@ function get_current_attempt($activityId, $studentId, $mysqli) {
     }
 
     $row = $result->fetch_assoc();
-    $attempt = isset($row['currentAttempt']) ? (int) $row['currentAttempt'] : 1;
+    $attempt = isset($row['attemptNumber']) ? (int) $row['attemptNumber'] : 1;
     return $attempt > 0 ? $attempt : 1;
 }
 

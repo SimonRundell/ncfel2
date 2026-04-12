@@ -151,10 +151,12 @@ GET /api/getUnits.php
   ↓ (student clicks unit)
 StudentAnswer.jsx
   ↓ (loads questions & answers)
-GET /api/getQuestions.php
-GET /api/getAnswers.php
+POST /api/getQuestions.php
+POST /api/getAnswers.php
   ↓ (student works on answers)
 TipTap editor
+  ↓ (MultiChoice)
+Select option index (autosave)
   ↓ (optional attachments)
 POST /api/uploadAnswerFile.php
   ↓ (student saves)
@@ -192,8 +194,7 @@ GET /api/getUnits.php
   ↓ (filter submissions)
 GET /api/getCurrentActivities.php (SUBMITTED/RESUBMITTED)
   ↓ (select submission)
-GET /api/getQuestions.php
-GET /api/getAnswers.php
+POST /api/getMarkingBundle.php
   ↓ (review and mark)
 Set outcomes (ACHIEVED/NOT ACHIEVED)
 Add comments

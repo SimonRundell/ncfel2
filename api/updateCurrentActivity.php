@@ -60,11 +60,13 @@ if (array_key_exists('dateResubmitted', $receivedData)) {
     $params[] = &$dateResubmitted;
 }
 
-if (array_key_exists('currentAttempt', $receivedData)) {
-    $currentAttempt = (int) $receivedData['currentAttempt'];
-    $setClauses[] = 'currentAttempt = ?';
+if (array_key_exists('attemptNumber', $receivedData) || array_key_exists('currentAttempt', $receivedData)) {
+    $attemptNumber = array_key_exists('attemptNumber', $receivedData)
+        ? (int) $receivedData['attemptNumber']
+        : (int) $receivedData['currentAttempt'];
+    $setClauses[] = 'attemptNumber = ?';
     $types .= 'i';
-    $params[] = &$currentAttempt;
+    $params[] = &$attemptNumber;
 }
 
 if (array_key_exists('dateComplete', $receivedData)) {

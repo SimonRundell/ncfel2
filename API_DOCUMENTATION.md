@@ -417,7 +417,7 @@ Retrieve units, optionally filtered by course.
 ```json
 {
   "status_code": 200,
-  "message": "[{\"id\":10,\"courseid\":3,\"unitName\":\"Unit 1\",\"unitCode\":\"PR101/TS2221\"},...]"
+  "message": "[{\"id\":10,\"courseid\":3,\"unitName\":\"Unit 1\",\"unitCode\":\"PR101/TS2221\",\"assessmentType\":\"Open\"},...]"
 }
 ```
 
@@ -429,7 +429,8 @@ Create a new unit.
 {
   "courseid": 3,
   "unitName": "Unit Name",
-  "unitCode": "PR101/TS2221"
+  "unitCode": "PR101/TS2221",
+  "assessmentType": "MultiChoice"
 }
 ```
 
@@ -451,7 +452,8 @@ Update existing unit.
   "id": 10,
   "courseid": 3,
   "unitName": "Updated Name",
-  "unitCode": "PR101/TS2221"
+  "unitCode": "PR101/TS2221",
+  "assessmentType": "Open"
 }
 ```
 
@@ -490,7 +492,8 @@ Retrieve questions for a unit (required) and optional course filter.
 ```json
 {
   "unitId": 5,
-  "courseId": 1
+  "courseId": 1,
+  "includeMCAnswer": true
 }
 ```
 
@@ -505,7 +508,8 @@ Retrieve questions for a unit (required) and optional course filter.
       "unitid": 5,
       "QuestionRef": "Q1a",
       "Question": "Explain the CIA triad",
-      "uploadPermitted": 1
+      "uploadPermitted": 1,
+      "MCAnswer": 2
     }
   ]
 }
@@ -521,7 +525,8 @@ Create a new question for a unit.
   "unitid": 5,
   "QuestionRef": "Q1a",
   "Question": "Explain the CIA triad",
-  "uploadPermitted": 1
+  "uploadPermitted": 1,
+  "MCAnswer": 2
 }
 ```
 
@@ -536,7 +541,8 @@ Update an existing question.
   "unitid": 5,
   "QuestionRef": "Q1a",
   "Question": "Explain the CIA triad",
-  "uploadPermitted": 0
+  "uploadPermitted": 0,
+  "MCAnswer": 2
 }
 ```
 
@@ -552,6 +558,7 @@ Delete a question.
 
 **Notes:**
 - Set uploadPermitted to 1 to allow student attachments for the question.
+- For MultiChoice units, MCAnswer is the correct option index.
 
 ## Answer File Uploads
 
@@ -710,13 +717,14 @@ Delete activity assignment.
 
 ## Questions & Answers
 
-### GET /api/getQuestions.php
+### POST /api/getQuestions.php
 Get questions for a unit.
 
-**Query Parameters:**
+**Request Body:**
 ```json
 {
-  "unitId": 10
+  "unitId": 10,
+  "includeMCAnswer": true
 }
 ```
 
@@ -724,18 +732,19 @@ Get questions for a unit.
 ```json
 {
   "status_code": 200,
-  "message": "[{\"id\":1,\"text\":\"Question 1\",\"type\":\"essay\"},...]"
+  "message": "[{\"id\":1,\"QuestionRef\":\"Q1\",\"Question\":\"Question 1\",\"uploadPermitted\":1,\"MCAnswer\":2},...]"
 }
 ```
 
-### GET /api/getAnswers.php
+### POST /api/getAnswers.php
 Get student answers for an activity.
 
-**Query Parameters:**
+**Request Body:**
 ```json
 {
   "activityId": 50,
-  "studentId": 123
+  "studentId": 123,
+  "attemptNumber": 1
 }
 ```
 
@@ -743,7 +752,16 @@ Get student answers for an activity.
 ```json
 {
   "status_code": 200,
-  "message": "[{\"id\":100,\"activityId\":50,\"questionId\":1,\"answer\":\"{json}\",\"status\":\"SUBMITTED\",\"outcome\":\"NOT ACHIEVED\",\"comment\":null,\"references\":[],\"updatedAt\":\"2026-02-04 10:30:00\"},...]"
+  "message": {
+    "data": {
+      "questions": [],
+      "answers": { "1": "{json}" },
+      "outcomes": { "1": "NOT ACHIEVED" },
+      "comments": { "1": "" },
+      "fileUploads": { "1": [] },
+      "attemptNumber": 1
+    }
+  }
 }
 ```
 
@@ -758,6 +776,47 @@ Get student answers for an activity.
 - `PASSED` - Successfully completed
 - `NOTPASSED` - Did not meet criteria
 - `DISCONTINUED` - Abandoned
+
+### POST /api/getMarkingBundle.php
+Get questions, answers, outcomes, comments, and uploads in one request.
+
+**Request Body:**
+```json
+{
+  "activityId": 50,
+  "studentId": 123,
+  "attemptNumber": 1
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "status_code": 200,
+  "message": {
+    "data": {
+      "questions": [
+        {
+          "id": 1,
+          "QuestionRef": "Q1",
+          "Question": "<p>Prompt</p><ol><li>A</li></ol>",
+          "uploadPermitted": 0,
+          "MCAnswer": 1
+        }
+      ],
+      "answers": { "1": 1 },
+      "outcomes": { "1": "ACHIEVED" },
+      "comments": { "1": "" },
+      "fileUploads": { "1": [] },
+      "attemptNumber": 1
+    }
+  }
+}
+```
+
+**Notes:**
+- Used by MarkingDashboard and IndividualAssessment for consistent marking data.
+- MultiChoice answers store the selected option index.
 
 ### POST /api/getAssessments.php
 Get assessment records for a specific student with joined course and unit information.
@@ -811,19 +870,12 @@ Batch mark answers for an activity with outcomes and comments.
 {
   "activityId": 50,
   "studentId": 123,
-  "outcomes": {
-    "1": "ACHIEVED",
-    "2": "NOT ACHIEVED",
-    "3": "ACHIEVED"
-  },
-  "comments": {
-    "1": "Excellent work",
-    "2": "Needs more detail",
-    "3": "Good understanding"
+  "marks": {
+    "1": { "outcome": "ACHIEVED", "comment": "Excellent work" },
+    "2": { "outcome": "NOT ACHIEVED", "comment": "Needs more detail" }
   },
   "assessorComment": "Overall good effort. Please review question 2.",
-  "assessorId": 5,
-  "newStatus": "PASSED"
+  "finalStatus": "REDOING"
 }
 ```
 
@@ -831,15 +883,17 @@ Batch mark answers for an activity with outcomes and comments.
 ```json
 {
   "status_code": 200,
-  "message": "Marking complete. 3 answers updated."
+  "message": "Marking saved",
+  "updated": 2,
+  "finalStatus": "RETURNED",
+  "attemptNumber": 1
 }
 ```
 
 **Notes:**
-- Updates multiple answer records in a single transaction
-- Sets outcome (ACHIEVED/NOT ACHIEVED) and individual comments per question
-- Updates activity status and overall assessor comment
-- Records assessor ID and completion date
+- Updates outcomes and comments per question
+- Sets answers.status to RETURNED when finalStatus is REDOING
+- Updates currentactivity status, dates, and attempt tracking
 - Used by MarkingDashboard component
 
 ### POST /api/saveAnswers.php
@@ -851,13 +905,19 @@ Save or submit student answers.
   "activityId": 50,
   "studentId": 123,
   "status": "SUBMITTED",
+  "attemptNumber": 1,
   "answers": {
-    "1": "{\"type\":\"doc\",\"content\":[...]}",  // TipTap JSON
-    "2": "{\"type\":\"doc\",\"content\":[...]}"
+    "1": "{\"type\":\"doc\",\"content\":[...]}",
+    "2": 3
   },
   "references": {
     "1": ["http://example.com/source1"],
     "2": []
+  },
+  "fileUploads": {
+    "1": [
+      { "id": "uuid.png", "originalName": "evidence.png", "mimeType": "image/png" }
+    ]
   }
 }
 ```
@@ -875,8 +935,9 @@ Save or submit student answers.
 **Notes:**
 - Uses UPSERT logic (insert or update)
 - `status: "DRAFT"` is converted to `INPROGRESS`
+- `status: "SUBMITTED"` or `"RESUBMITTED"` updates all answers in the attempt
 - `status: "SUBMITTED"` triggers email to teachers
-- Answer format is TipTap JSON
+- Answer format is TipTap JSON (open) or option index (MultiChoice)
 - References are URLs as JSON array
 
 ## Utility Endpoints
@@ -970,8 +1031,23 @@ CREATE TABLE `unit` (
   `courseId` INT NOT NULL,
   `name` VARCHAR(255) NOT NULL,
   `description` TEXT NULL,
-  `questions` JSON NULL,
+  `assessmentType` ENUM('Open','MultiChoice') DEFAULT 'Open',
   FOREIGN KEY (`courseId`) REFERENCES `course`(`id`) ON DELETE CASCADE
+);
+```
+
+### questions table
+```sql
+CREATE TABLE `questions` (
+  `id` INT PRIMARY KEY AUTO_INCREMENT,
+  `courseid` INT NOT NULL,
+  `unitid` INT NOT NULL,
+  `QuestionRef` VARCHAR(50) NULL,
+  `Question` TEXT NOT NULL,
+  `uploadPermitted` TINYINT(1) NOT NULL DEFAULT 0,
+  `MCAnswer` SMALLINT NULL,
+  FOREIGN KEY (`courseid`) REFERENCES `course`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`unitid`) REFERENCES `unit`(`id`) ON DELETE CASCADE
 );
 ```
 
@@ -995,13 +1071,15 @@ CREATE TABLE `answers` (
   `activityId` INT NOT NULL,
   `studentId` INT NOT NULL,
   `questionId` INT NOT NULL,
+  `attemptNumber` INT NOT NULL DEFAULT 1,
   `answer` TEXT NULL,
   `outcome` ENUM('ACHIEVED','NOT ACHIEVED') DEFAULT 'NOT ACHIEVED',
   `comment` TEXT NULL,
   `references` JSON NULL,
   `status` ENUM(...) DEFAULT 'NOTSET',
+  `fileUploads` JSON NULL,
   `updatedAt` DATETIME NULL,
-  UNIQUE KEY (`activityId`, `studentId`, `questionId`)
+  UNIQUE KEY (`activityId`, `studentId`, `questionId`, `attemptNumber`)
 );
 ```
 

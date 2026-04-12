@@ -26,7 +26,7 @@ if ($activityId === null || $studentId === null || !is_array($marks)) {
     send_response('Missing activityId, studentId, or marks payload', 400);
 }
 
-$attemptStmt = $mysqli->prepare('SELECT currentAttempt FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
+$attemptStmt = $mysqli->prepare('SELECT attemptNumber FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
 if (!$attemptStmt) {
     log_info('Prepare failed for currentactivity attempt: ' . $mysqli->error);
     send_response('Prepare failed: ' . $mysqli->error, 500);
@@ -41,7 +41,7 @@ $attemptRow = $attemptResult ? $attemptResult->fetch_assoc() : null;
 if (!$attemptRow) {
     send_response('Activity not found', 404);
 }
-$currentAttempt = isset($attemptRow['currentAttempt']) ? (int) $attemptRow['currentAttempt'] : 1;
+$currentAttempt = isset($attemptRow['attemptNumber']) ? (int) $attemptRow['attemptNumber'] : 1;
 
 $allowedFinalStatuses = ['PASSED', 'REDOING', 'NOTPASSED'];
 if (!in_array($finalStatus, $allowedFinalStatuses, true)) {
@@ -120,7 +120,7 @@ if ($finalStatus === 'REDOING') {
     }
 }
 
-$activityStmt = $mysqli->prepare('UPDATE currentactivity SET status = ?, dateMarked = ?, dateComplete = ?, assessorComment = ?, currentAttempt = ?, dateReturned = ? WHERE id = ? AND studentId = ?');
+$activityStmt = $mysqli->prepare('UPDATE currentactivity SET status = ?, dateMarked = ?, dateComplete = ?, assessorComment = ?, attemptNumber = ?, dateReturned = ? WHERE id = ? AND studentId = ?');
 if (!$activityStmt) {
     log_info('Prepare failed for currentactivity: ' . $mysqli->error);
     send_response('Prepare failed: ' . $mysqli->error, 500);

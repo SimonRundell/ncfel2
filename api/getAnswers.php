@@ -55,14 +55,14 @@ while ($row = $result->fetch_assoc()) {
 
 log_info('getAnswers returned rows=' . $rowCount);
 
-$activityStmt = $mysqli->prepare('SELECT assessorComment, currentAttempt FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
+$activityStmt = $mysqli->prepare('SELECT assessorComment, attemptNumber FROM currentactivity WHERE id = ? AND studentId = ? LIMIT 1');
 if ($activityStmt) {
     $activityStmt->bind_param('ii', $activityId, $studentId);
     if ($activityStmt->execute()) {
         $activityResult = $activityStmt->get_result();
         if ($activityRow = $activityResult->fetch_assoc()) {
             $assessorComment = $activityRow['assessorComment'] ?? '';
-            $currentAttempt = isset($activityRow['currentAttempt']) ? (int) $activityRow['currentAttempt'] : $currentAttempt;
+            $currentAttempt = isset($activityRow['attemptNumber']) ? (int) $activityRow['attemptNumber'] : $currentAttempt;
         }
     }
 }

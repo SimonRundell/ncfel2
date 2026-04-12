@@ -39,6 +39,7 @@ The NCFE Level 2 Certificate System is a full-stack web application designed to 
 - Login with email credentials
 - View assigned units and activities
 - Complete assignments using rich text editor (TipTap)
+- Complete MultiChoice units with single-click answers and autosave
 - Add references/citations to answers
 - Save drafts and submit for marking
 - Track submission status
@@ -51,6 +52,7 @@ The NCFE Level 2 Certificate System is a full-stack web application designed to 
 - All student features plus:
 - View student submissions via Marking Dashboard
 - Mark and provide feedback (sticky marking header with "Finish marking & return" action)
+- Auto-score MultiChoice submissions with per-question outcomes
 - Assessment Report: filter by class/status, printable landscape table with key dates
 - Individual Assessment view: detailed student assessment history with printable feedback
 - Monitor class progress
@@ -61,6 +63,7 @@ The NCFE Level 2 Certificate System is a full-stack web application designed to 
 - Full system access
 - User management (create, edit, delete, bulk upload with forced password change)
 - Course and unit management
+- Set unit assessment type and MultiChoice correct answers
 - Activity assignment to classes
 - Reporting and analytics
 - System configuration
@@ -256,6 +259,7 @@ ncfel2/
 │   ├── deleteCurrentActivity.php # Activity deletion
 │   ├── getQuestions.php          # Question retrieval
 │   ├── getAnswers.php            # Answer retrieval
+│   ├── getMarkingBundle.php      # Marking bundle (questions + answers + outcomes)
 │   ├── saveAnswers.php           # Answer submission
 │   ├── getClassCodes.php         # Class code retrieval
 │   ├── getStudents.php           # Student retrieval
@@ -330,7 +334,16 @@ The system supports three user roles defined by the `status` field:
 - `courseId` (INT, FK)
 - `name` (VARCHAR)
 - `description` (TEXT)
-- `questions` (JSON) - Array of question objects
+- `assessmentType` (ENUM) - 'Open' or 'MultiChoice'
+
+**questions**
+- `id` (INT, PK)
+- `courseid` (INT, FK)
+- `unitid` (INT, FK)
+- `QuestionRef` (VARCHAR)
+- `Question` (TEXT) - Stored HTML
+- `uploadPermitted` (TINYINT)
+- `MCAnswer` (SMALLINT) - Correct option index for MultiChoice
 
 **currentActivities**
 - `id` (INT, PK)
@@ -344,11 +357,13 @@ The system supports three user roles defined by the `status` field:
 - `activityId` (INT, FK)
 - `studentId` (INT, FK)
 - `questionId` (INT)
-- `answer` (TEXT) - JSON formatted answer
+- `attemptNumber` (INT)
+- `answer` (TEXT) - JSON formatted answer or MC option index
 - `outcome` (ENUM) - 'ACHIEVED' or 'NOT ACHIEVED'
 - `comment` (TEXT) - Teacher feedback
 - `references` (JSON) - Citation URLs
 - `status` (ENUM) - Submission status
+- `fileUploads` (JSON) - Uploaded file metadata per question
 - `updatedAt` (DATETIME)
 
 ### Status Values
@@ -485,6 +500,7 @@ All API endpoints follow a consistent pattern:
 - `POST /api/createCurrentActivity.php` - Assign activity
 - `GET /api/getQuestions.php` - Get unit questions
 - `GET /api/getAnswers.php` - Get student answers
+- `POST /api/getMarkingBundle.php` - Get questions/answers/outcomes in one call
 - `POST /api/saveAnswers.php` - Submit answers
 - `POST /api/getAssessments.php` - Get assessment records
 - `POST /api/markAnswers.php` - Batch mark answers

@@ -4,8 +4,8 @@ import { normalizeListResponse } from './adminApiHelpers'
 import {formatDateTime} from './dateUtils'
 
 /**
- * Modal view for a single student's assessments, including questions/answers and printable feedback.
- * Fetches assessments, questions, answers, and assessor info; supports print and status display.
+ * Modal view for a single student's assessments, including outcomes and printable feedback.
+ * Fetches assessment list plus per-attempt marking bundles via getMarkingBundle.
  *
  * @component
  * @param {{
@@ -42,7 +42,7 @@ useEffect(() => {
                     headers: { 'Content-Type': 'application/json' },
                 }
             );
-            // console.log("Assessment for: ",studentId,  response.data)
+            console.log("Assessment for: ",studentId,  response.data)
             const assessmentData = normalizeListResponse(response.data);
             setAssessment(assessmentData);
         } catch (error) {
@@ -79,6 +79,8 @@ useEffect(() => {
 
             setQuestions(questionsList)
             setAnswers(bundle.outcomes || {})
+
+                  console.log('Loaded answers', bundle.outcomes);
 
             // Fetch assessor name if assessorId is available
             if (ass.assessorId) {
