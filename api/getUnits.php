@@ -1,4 +1,12 @@
 <?php
+/**
+ * Retrieve units, optionally filtered by course or id.
+ * Returns assessmentType for each unit.
+ *
+ * Request body:
+ * - courseid (int, optional)
+ * - id (int, optional)
+ */
 include 'setup.php';
 
 $courseId = $receivedData['courseid'] ?? null;

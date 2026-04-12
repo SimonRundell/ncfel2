@@ -1,4 +1,10 @@
 <?php
+/**
+ * Get students for a class code without avatar payloads.
+ *
+ * Request body:
+ * - classCode (string, required)
+ */
 include 'setup.php';
 
 $query = "SELECT id, email, userName, classCode, status FROM user WHERE classCode = ?";

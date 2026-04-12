@@ -1,4 +1,14 @@
 <?php
+/**
+ * Download or preview an uploaded answer file.
+ *
+ * Query params:
+ * - activityId (int, required)
+ * - studentId (int, required)
+ * - questionId (int, required)
+ * - fileId (string, required)
+ * - attemptNumber (int, optional)
+ */
 include 'setup.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {

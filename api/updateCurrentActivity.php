@@ -1,4 +1,16 @@
 <?php
+/**
+ * Update a current activity with status, dates, and attempt number.
+ *
+ * Request body:
+ * - id (int, required)
+ * - studentId (int, required)
+ * - courseId (int, required)
+ * - unitId (int, required)
+ * - status (string, required)
+ * - dateSet/dateSubmitted/dateMarked/dateReturned/dateResubmitted/dateComplete (string, optional)
+ * - attemptNumber or currentAttempt (int, optional)
+ */
 include 'setup.php';
 
 $required = ['id', 'studentId', 'courseId', 'unitId', 'status'];

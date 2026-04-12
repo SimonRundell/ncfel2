@@ -1,4 +1,13 @@
 <?php
+/**
+ * Retrieve questions for a unit.
+ * Use includeMCAnswer to return MCAnswer for MultiChoice units.
+ *
+ * Request body:
+ * - unitId (int, required)
+ * - courseId (int, optional)
+ * - includeMCAnswer (bool, optional)
+ */
 include 'setup.php';
 
 $unitId = $receivedData['unitId'] ?? $receivedData['unitid'] ?? ($_GET['unitId'] ?? $_GET['unitid'] ?? null);

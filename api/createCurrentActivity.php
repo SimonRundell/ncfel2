@@ -1,4 +1,15 @@
 <?php
+/**
+ * Create a current activity (assessment assignment) row.
+ *
+ * Request body:
+ * - studentId (int, required)
+ * - courseId (int, required)
+ * - unitId (int, required)
+ * - assessorId (int, required)
+ * - status (string, optional)
+ * - dateSet/dateSubmitted/dateMarked/dateResubmitted/dateComplete (string, optional)
+ */
 include 'setup.php';
 
 $required = ['studentId', 'courseId', 'unitId', 'assessorId'];

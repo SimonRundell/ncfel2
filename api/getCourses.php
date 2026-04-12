@@ -1,4 +1,10 @@
 <?php
+/**
+ * Get courses, optionally filtered by id.
+ *
+ * Request:
+ * - id (int, optional)
+ */
 include 'setup.php';
 
 $id = $receivedData['id'] ?? null;

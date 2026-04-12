@@ -1,4 +1,10 @@
 <?php
+/**
+ * Delete a user by id.
+ *
+ * Request body:
+ * - id (int, required)
+ */
 include 'setup.php';
 
 if (!isset($receivedData['id'])) {

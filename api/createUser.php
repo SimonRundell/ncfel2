@@ -1,4 +1,16 @@
 <?php
+/**
+ * Create a user and optionally send a welcome email to students.
+ *
+ * Request body:
+ * - email (string, required)
+ * - passwordHash (string, required)
+ * - userName (string, required)
+ * - classCode (string, optional)
+ * - status (int, optional)
+ * - avatar (string, optional)
+ * - plainPassword (string, optional)
+ */
 include 'setup.php';
 require_once __DIR__ . '/emailHelper.php';
 

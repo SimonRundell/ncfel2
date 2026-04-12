@@ -1,4 +1,11 @@
 <?php
+/**
+ * Create a new course.
+ *
+ * Request body:
+ * - courseName (string, required)
+ * - courseCode (string, required)
+ */
 include 'setup.php';
 
 if (!isset($receivedData['courseName']) || trim($receivedData['courseName']) === '') {

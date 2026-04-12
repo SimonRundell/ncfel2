@@ -1,4 +1,13 @@
 <?php
+/**
+ * Create a unit with an assessment type (Open or MultiChoice).
+ *
+ * Request body:
+ * - courseid (int, required)
+ * - unitName (string, required)
+ * - unitCode (string, required)
+ * - assessmentType (string, optional): Open | MultiChoice
+ */
 include 'setup.php';
 
 if (!isset($receivedData['courseid'], $receivedData['unitName'])) {

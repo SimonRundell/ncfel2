@@ -1,4 +1,17 @@
 <?php
+/**
+ * Update a question for a unit.
+ * For MultiChoice units, MCAnswer is the 1-based correct option index.
+ *
+ * Request body:
+ * - id (int, required)
+ * - courseid (int, required)
+ * - unitid (int, required)
+ * - Question (string, required)
+ * - QuestionRef (string, optional)
+ * - uploadPermitted (int, optional)
+ * - MCAnswer (int, optional)
+ */
 include 'setup.php';
 
 if (!isset($receivedData['id'], $receivedData['courseid'], $receivedData['unitid'], $receivedData['Question'])) {

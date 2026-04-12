@@ -1,4 +1,12 @@
 <?php
+/**
+ * Bulk create users from CSV content and optionally email credentials.
+ *
+ * Request body:
+ * - classCode (string, required)
+ * - defaultPassword (string, required)
+ * - csvContent (string, required)
+ */
 include 'setup.php';
 require_once __DIR__ . '/emailHelper.php';
 

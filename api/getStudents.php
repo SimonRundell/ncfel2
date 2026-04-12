@@ -1,4 +1,10 @@
 <?php
+/**
+ * Get students for a class code (full user records).
+ *
+ * Request body:
+ * - classCode (string, required)
+ */
 include 'setup.php';
 
 $query = "SELECT * FROM user WHERE classCode = ?";

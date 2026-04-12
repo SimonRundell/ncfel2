@@ -1,4 +1,12 @@
 <?php
+/**
+ * Update a course.
+ *
+ * Request body:
+ * - id (int, required)
+ * - courseName (string, required)
+ * - courseCode (string, required)
+ */
 include 'setup.php';
 
 if (!isset($receivedData['id'], $receivedData['courseName'])) {

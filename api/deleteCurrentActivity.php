@@ -1,4 +1,10 @@
 <?php
+/**
+ * Delete a current activity by id.
+ *
+ * Request body:
+ * - id (int, required)
+ */
 include 'setup.php';
 
 if (!isset($receivedData['id'])) {

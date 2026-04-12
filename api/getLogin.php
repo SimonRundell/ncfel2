@@ -1,4 +1,11 @@
 <?php
+/**
+ * Validate login credentials and return user record(s).
+ *
+ * Request body:
+ * - email (string, required)
+ * - passwordHash (string, required)
+ */
 include 'setup.php';
 
 $query = "SELECT * FROM user WHERE email = ? AND passwordHash = ?";

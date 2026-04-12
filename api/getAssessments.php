@@ -1,4 +1,10 @@
 <?php
+/**
+ * Get assessment records for a student, including course and unit info.
+ *
+ * Request body:
+ * - studentId (int, required)
+ */
 include 'setup.php';
 
 $query = "SELECT currentactivity.*, course.courseName, course.courseCode, unit.unitName, unit.unitCode

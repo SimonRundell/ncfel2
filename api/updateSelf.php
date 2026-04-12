@@ -1,4 +1,13 @@
 <?php
+/**
+ * Update the current user's profile details.
+ *
+ * Request body:
+ * - id (int, required)
+ * - email (string, optional)
+ * - passwordHash (string, optional)
+ * - avatar (string, optional)
+ */
 include 'setup.php';
 
 $required = ['id'];

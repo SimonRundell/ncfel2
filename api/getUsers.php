@@ -1,4 +1,12 @@
 <?php
+/**
+ * Get users, optionally filtered by id, classCode, or status.
+ *
+ * Request body:
+ * - id (int, optional)
+ * - classCode (string, optional)
+ * - status (int, optional)
+ */
 include 'setup.php';
 
 $id = $receivedData['id'] ?? null;

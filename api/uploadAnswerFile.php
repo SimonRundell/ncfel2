@@ -1,4 +1,14 @@
 <?php
+/**
+ * Upload an attachment for a question answer.
+ *
+ * Request (multipart/form-data):
+ * - activityId (int, required)
+ * - studentId (int, required)
+ * - questionId (int, required)
+ * - attemptNumber (int, optional)
+ * - file (binary, required)
+ */
 include 'setup.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

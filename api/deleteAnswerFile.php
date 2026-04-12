@@ -1,4 +1,14 @@
 <?php
+/**
+ * Remove an uploaded answer file entry and delete the stored file.
+ *
+ * Request body:
+ * - activityId (int, required)
+ * - studentId (int, required)
+ * - questionId (int, required)
+ * - fileId (string, required)
+ * - attemptNumber (int, optional)
+ */
 include 'setup.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

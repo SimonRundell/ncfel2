@@ -1,4 +1,14 @@
 <?php
+/**
+ * Get current activities with course and unit names.
+ *
+ * Request body:
+ * - id (int, optional)
+ * - studentId (int, optional)
+ * - courseId (int, optional)
+ * - unitId (int, optional)
+ * - status (string, optional)
+ */
 include 'setup.php';
 
 $filters = [

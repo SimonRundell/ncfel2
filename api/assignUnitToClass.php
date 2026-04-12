@@ -1,4 +1,15 @@
 <?php
+/**
+ * Assign a unit to all students in a class.
+ *
+ * Request body:
+ * - classCode (string, required)
+ * - courseId (int, required)
+ * - unitId (int, required)
+ * - assessorId (int, required)
+ *
+ * Response includes inserted/skipped counts.
+ */
 include 'setup.php';
 
 $payload = is_array($receivedData) ? $receivedData : [];

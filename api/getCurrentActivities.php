@@ -1,4 +1,14 @@
 <?php
+/**
+ * Get current activities with optional filters.
+ *
+ * Request body:
+ * - id (int, optional)
+ * - studentId (int, optional)
+ * - courseId (int, optional)
+ * - unitId (int, optional)
+ * - status (string, optional)
+ */
 include 'setup.php';
 
 $filters = [

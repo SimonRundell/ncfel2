@@ -1,4 +1,14 @@
 <?php
+/**
+ * Update a unit, including assessmentType.
+ *
+ * Request body:
+ * - id (int, required)
+ * - courseid (int, required)
+ * - unitName (string, required)
+ * - unitCode (string, required)
+ * - assessmentType (string, optional): Open | MultiChoice
+ */
 include 'setup.php';
 
 if (!isset($receivedData['id'], $receivedData['courseid'], $receivedData['unitName'])) {

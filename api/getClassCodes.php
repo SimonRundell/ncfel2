@@ -1,4 +1,7 @@
 <?php
+/**
+ * Get distinct class codes for roster selection.
+ */
 include 'setup.php';
 
 $query = "SELECT DISTINCT classCode FROM user WHERE classCode IS NOT NULL AND classCode != '' ORDER BY classCode ASC";

@@ -1,4 +1,13 @@
 <?php
+/**
+ * Issue a JWT for API access using service credentials.
+ *
+ * Accepts Basic auth or JSON body credentials and returns a bearer token.
+ *
+ * Request:
+ * - Authorization: Basic base64(username:password)
+ * - or JSON body: { username, password }
+ */
 include 'setup.php';
 
 $authHeader = get_auth_header();

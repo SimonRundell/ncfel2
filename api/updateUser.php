@@ -1,4 +1,16 @@
 <?php
+/**
+ * Update a user record.
+ *
+ * Request body:
+ * - id (int, required)
+ * - email (string, required)
+ * - passwordHash (string, required)
+ * - userName (string, required)
+ * - classCode (string, optional)
+ * - status (int, optional)
+ * - avatar (string, optional)
+ */
 include 'setup.php';
 
 $required = ['id', 'email', 'passwordHash', 'userName'];

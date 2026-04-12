@@ -1,4 +1,12 @@
 <?php
+/**
+ * Get answers for an activity and student.
+ *
+ * Request body:
+ * - activityId (int, required)
+ * - studentId (int, required)
+ * - attemptNumber (int, optional)
+ */
 include 'setup.php';
 
 $activityId = $receivedData['activityId'] ?? null;
