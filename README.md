@@ -35,6 +35,10 @@ The NCFE Level 2 Certificate System is a full-stack web application designed to 
 
 ## Features
 
+### Assessment Types
+- **Open**: TipTap rich-text answers with optional references and attachments.
+- **MultiChoice**: Numbered list options with autosave and automatic outcome calculation.
+
 ### For Students (Status: 0)
 - Login with email credentials
 - View assigned units and activities
@@ -582,6 +586,11 @@ See JSDoc comments in each file for detailed component documentation.
 
 ## Troubleshooting
 
+## License
+
+This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+See [LICENSE](LICENSE) for details.
+
 ### Common Issues
 
 **Frontend won't start**
@@ -642,10 +651,6 @@ ini_set('display_errors', 1);
 4. Test thoroughly
 5. Submit pull request with description
 
-## License
-
-[Specify license]
-
 ## Support
 
 For issues or questions:
@@ -653,9 +658,12 @@ For issues or questions:
 - Review `api/server.log` for errors
 - Contact system administrator
 
-## Authors
+## Author
 
-Exeter College IT Development Team
+Simon Rundell (simonrundell@exe-coll.ac.uk)
+Programme Leader, Department of IT Digital and Data
+Exeter College, Victoria House, Queen Street, EX4 3SR
+Mob: +447976802123
 
 ## Acknowledgments
 

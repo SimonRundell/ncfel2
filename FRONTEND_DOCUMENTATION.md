@@ -711,6 +711,12 @@ const buildPrintHtml = () => {
 // Returns: Normalized array
 ```
 
+---
+
+## License
+
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International. See [LICENSE](LICENSE).
+
 **Usage:**
 ```javascript
 import { normalizeListResponse } from './adminApiHelpers';

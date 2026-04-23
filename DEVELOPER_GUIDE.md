@@ -258,6 +258,10 @@ Tab 5: AssignUnit.jsx
 user (students, teachers, admins)
   - changeLogin flag for forced password change
   ↓
+
+## License
+
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International. See [LICENSE](LICENSE).
 currentActivities (assignments)
   - dateSet, dateSubmitted, dateMarked, dateComplete
   - status tracking (SUBMITTED, INMARKING, PASSED, etc)

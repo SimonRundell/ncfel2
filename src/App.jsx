@@ -109,8 +109,8 @@ function App() {
       if (mustChangePassword) {
         setShowProfile(true);
       } else if (currentUser.status === 3) {
-        setActiveView('admin');
-        setAdminSection('roster');
+        setActiveView('report');
+        // setAdminSection('roster');
       } else if (currentUser.status === 2) {
         setActiveView('marking');
       } else {

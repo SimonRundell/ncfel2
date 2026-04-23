@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Student assessment workspace with rich-text answers, MC options, and uploads.
+ */
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';

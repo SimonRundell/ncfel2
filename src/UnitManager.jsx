@@ -195,8 +195,8 @@ const UnitManager = ({ config, onSuccess, onError }) => {
         </div>
       </div>
 
-      <div className={showEditor ? 'admin-editor is-open' : 'admin-editor'} aria-hidden={!showEditor}>
-        <form className="admin-form" onSubmit={handleSubmit}>
+      <div className={showEditor ? 'admin-editor is-open' : 'admin-editor'} aria-hidden={!showEditor} onClick={closeEditor}>
+        <form className="admin-form" onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
           <label className="admin-label">
             Course
             <select

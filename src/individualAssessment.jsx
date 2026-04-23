@@ -42,7 +42,7 @@ useEffect(() => {
                     headers: { 'Content-Type': 'application/json' },
                 }
             );
-            console.log("Assessment for: ",studentId,  response.data)
+            // console.log("Assessment for: ",studentId,  response.data)
             const assessmentData = normalizeListResponse(response.data);
             setAssessment(assessmentData);
         } catch (error) {
@@ -80,7 +80,7 @@ useEffect(() => {
             setQuestions(questionsList)
             setAnswers(bundle.outcomes || {})
 
-                  console.log('Loaded answers', bundle.outcomes);
+                  // console.log('Loaded answers', bundle.outcomes);
 
             // Fetch assessor name if assessorId is available
             if (ass.assessorId) {

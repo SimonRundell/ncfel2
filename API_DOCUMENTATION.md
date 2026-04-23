@@ -402,6 +402,11 @@ Delete a course.
 
 ## Unit Management
 
+### Assessment Types
+Units can be configured with an assessment type:
+- `Open`: TipTap rich-text answers with optional attachments.
+- `MultiChoice`: Numbered list options with a 1-based `MCAnswer` index.
+
 ### GET /api/getUnits.php
 Retrieve units, optionally filtered by course.
 
@@ -1137,6 +1142,10 @@ await axios.post(config.api + '/saveAnswers.php', {
 ```
 
 ## Logging
+
+## License
+
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International. See [LICENSE](LICENSE).
 
 All API operations are logged to `/api/server.log`:
 

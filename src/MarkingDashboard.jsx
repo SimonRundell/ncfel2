@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Teacher/admin marking dashboard for reviewing and grading submissions.
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { EditorContent, useEditor } from '@tiptap/react';

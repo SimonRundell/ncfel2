@@ -1,9 +1,13 @@
+/**
+ * @fileoverview Admin UI for creating, updating, and deleting assessment questions.
+ */
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { normalizeListResponse, getMessageFromResponse } from './adminApiHelpers';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import { stripHTML } from './htmlHelpers';
 
 const icons = {
   bold: <img src="/images/bold.png" alt="Bold" width="28" height="28" />,
@@ -366,8 +370,8 @@ const QuestionsManager = ({ config, onSuccess, onError }) => {
         </div>
       </div>
 
-      <div className={showEditor ? 'admin-editor is-open' : 'admin-editor'} aria-hidden={!showEditor}>
-        <form className="admin-form" onSubmit={handleSubmit}>
+      <div className={showEditor ? 'admin-editor is-open' : 'admin-editor'} aria-hidden={!showEditor} onClick={closeEditor}>
+        <form className="admin-form" onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
           <label className="admin-label">
             Course
             <select
@@ -527,7 +531,7 @@ const QuestionsManager = ({ config, onSuccess, onError }) => {
               <div className="admin-row-subtitle">
                 ID: {question.id} · Unit ID: {question.unitid} · Uploads: {Number(question.uploadPermitted) === 1 ? 'Yes' : 'No'}
               </div>
-              <div className="admin-row-subtitle">{question.Question}</div>
+              <div className="admin-row-subtitle">{stripHTML(question.Question)}</div>
             </div>
             <div className="admin-row-actions">
               <button type="button" onClick={() => handleEdit(question)} disabled={loading}>

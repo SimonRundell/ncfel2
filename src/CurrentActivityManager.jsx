@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Admin management UI for current activities and status updates.
+ */
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { normalizeListResponse } from './adminApiHelpers';
