@@ -84,10 +84,10 @@ function Menu({ currentUser, onLogout, onProfile, activeView, adminSection, onVi
             Admin
           </button>
         )}
-        <button type="button" onClick={onProfile}>
+        <button type="button" className="menu-toggle" onClick={onProfile}>
           Profile
         </button>
-        <button type="button" onClick={onLogout}>
+        <button type="button" className="menu-toggle" onClick={onLogout}>
           Logout
         </button>
       </div>

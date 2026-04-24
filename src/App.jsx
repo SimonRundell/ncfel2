@@ -114,7 +114,7 @@ function App() {
       } else if (currentUser.status === 2) {
         setActiveView('marking');
       } else {
-        setActiveView('assignments');
+        setActiveView('assignments');4
       }
     }, 0);
     
